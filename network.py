@@ -15,13 +15,14 @@ def init_ganache(state):
 
     
 class Local_Network:
-    def __init__(self, name, project_path):
+    def __init__(self, name, project_path, chain_id=0,port="8545"):
         self.name = name
-        self.chain_id = 0
+        self.chain_id = chain_id
+        self.port = port
         self.project_path = project_path
 
     def connect_to_node(self):
-        w3 = Web3(HTTPProvider("http://127.0.0.1:8545"))
+        w3 = Web3(HTTPProvider(f"http://127.0.0.1:{self.port}"))
 
         return w3
 

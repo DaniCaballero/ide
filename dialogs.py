@@ -443,6 +443,13 @@ class Test_Dialog(QDialog):
         self.test.concurrency_number = self.spinBox_2.value()
         self.test.instructions = self.instructions
         self.test.project_path = self.project_path
+
+        if Path(os.path.join(self.project_path, "tests", self.test.name)).exists():
+            error_message = QErrorMessage(self)
+            error_message.showMessage("There's already a test with the same name")
+            return
+
+        self.run_test_btn.setEnabled(True)
         
         print(self.instructions)
     
@@ -586,7 +593,9 @@ class Instruction_Widget(QWidget):
         contract = self.contracts[self.select_contract.currentText()][index]
         functions = contract.get_functions()
 
-        self.select_function.addItems(["deploy"]+[function["name"] for function in functions])
+        # Chequear que el contrato efectivamente tenga un constructor primero
+
+        self.select_function.addItems(["constructor"]+[function["name"] for function in functions])
 
     def set_arguments(self, index):
         contract = self.contracts[self.select_contract.currentText()][self.select_version.currentIndex()]
@@ -594,9 +603,13 @@ class Instruction_Widget(QWidget):
         function_name = self.select_function.currentText()
 
         function_dict = {}
-        for function in functions:
-            if function["name"] == function_name:
-                function_dict = function
+
+        if function_name == "constructor":
+            function_dict = contract.get_constructor()
+        else:
+            for function in functions:
+                if function["name"] == function_name:
+                    function_dict = function
         
         self.arguments = [input["name"] for input in function_dict["inputs"]]
 
@@ -637,6 +650,8 @@ class List_Arguments_Dialog(QDialog):
         self.scroll_widget_layout = QVBoxLayout()
         self.scroll_widget_layout.setAlignment(Qt.AlignmentFlag.AlignTop)
 
+        self.select_accounts_btn.clicked.connect(self.add_accounts)
+
         self.widget.setLayout(self.scroll_widget_layout)
         self.add_widgets(args)
 
@@ -653,6 +668,14 @@ class List_Arguments_Dialog(QDialog):
         
         return True
 
+    def add_accounts(self):
+        dlg = Select_Account_Dialog()
+
+        if dlg.exec():
+            print("baaaa")
+        else:
+            pass
+
     def accept(self):
         are_args_valid = self.check_valid_args()
 
@@ -661,6 +684,11 @@ class List_Arguments_Dialog(QDialog):
         else:
             error_message = QErrorMessage(self)
             error_message.showMessage("All arguments must be defined")
+
+class Select_Account_Dialog(QDialog):
+    def __init__(self):
+        super().__init__()
+        uic.loadUi("./ui/Select_Account_Dialog.ui", self)
 
 
 

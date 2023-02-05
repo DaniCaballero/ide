@@ -2,6 +2,7 @@ import random, pandas, time, threading, blocksmith, json, os, signal
 from interact import contract_interaction
 from account import Account, Test_Account
 from geth_nodes import init_geth_nodes, connect_nodes
+from network import Local_Network
 
 def create_genesis_block(accounts, miner, test_path):
     genesis_config = {"chainId": 1325,
@@ -129,18 +130,9 @@ class Test:
         for pid in pids:
             os.kill(pid, signal.SIGINT)
 
-    def run(self):
-        # for instructions
-        # initialize arguments
-        # create threads
-        # assign load to threads
-        # for exec number / time_interval
-        # extract arguments
-        # pick a node
-        # send transaction
-        # write result to file?
-        for i in range(3):
-            print("PRIVAT KEY: ", self.accounts[i].address, self.accounts[i].private_key)
+    def configure_evironment(self):
+        #for i in range(3):
+        #    print("PRIVAT KEY: ", self.accounts[i].address, self.accounts[i].private_key)
         
         test_path = os.path.join(self.project_path, "tests", self.name)
         try:
@@ -154,7 +146,21 @@ class Test:
 
         http_ports, pids = init_geth_nodes(self.number_of_nodes, test_path, self.accounts[0])
         connect_nodes(http_ports)
+
+        self.nodes = [Local_Network("geth", "", 1325, port) for port in http_ports]
         print("Si alcanzo este punto")
+
+    def run(self):
+        # for instructions
+        # initialize arguments
+        # create threads
+        # assign load to threads
+        # for exec number / time_interval
+        # extract arguments
+        # pick a node
+        # send transaction
+        # write result to file?
+
 
         time.sleep(5)
 

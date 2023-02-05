@@ -37,7 +37,7 @@
       </widget>
      </item>
      <item>
-      <widget class="QPushButton" name="pushButton">
+      <widget class="QPushButton" name="select_accounts_btn">
        <property name="styleSheet">
         <string notr="true">padding: 5px 15px;
 border: 1px solid #5b8cb9;

@@ -38,8 +38,8 @@ class Contract:
         try:
             constructor = [item for item in self.abi if item["type"]=="constructor"]
             #input_types = [input["type"] for input in constructor["inputs"]]
-            input_types = [item["type"] for item in constructor[0]["inputs"]]
-            print("iput types",input_types)
-            return input_types
+            #input = [item for item in constructor[0]["inputs"]]
+            #print("iput types",input_types)
+            return constructor[0]
         except:
             return []

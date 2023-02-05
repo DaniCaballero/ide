@@ -276,6 +276,9 @@ background-color: #517da6
        <layout class="QHBoxLayout" name="horizontalLayout_4">
         <item>
          <widget class="QPushButton" name="run_test_btn">
+          <property name="enabled">
+           <bool>false</bool>
+          </property>
           <property name="styleSheet">
            <string notr="true">#run_test_btn {
 border: 1px solid #5b8cb9;
@@ -287,6 +290,10 @@ padding: 5px 15px;
 
 #run_test_btn::hover{
 background-color: #517da6
+}
+
+#run_test_btn::disabled {
+background-color: grey;
 }</string>
           </property>
           <property name="text">
