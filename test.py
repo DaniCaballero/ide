@@ -1,7 +1,9 @@
-import random, pandas, time, threading, blocksmith, json, os, signal
+import random, pandas, time, threading, blocksmith, json, os, signal, decimal
 from account import Account, Test_Account
 from geth_nodes import init_geth_nodes, connect_nodes
 from network import Local_Network
+from web3 import Web3
+
 
 def create_genesis_block(accounts, miner, test_path):
     genesis_config = {"chainId": 1325,
@@ -65,7 +67,12 @@ class Test:
         data = []
         
         for arg in args:
-            data.append(arg.generate_data(iters))
+            tmp_data = arg.generate_data(iters)
+
+            if arg.name == "ether denomination":
+                tmp_data = [Web3.toWei(decimal.Decimal(data), arg.type) for data in tmp_data]
+
+            data.append(tmp_data)
 
         return data
 
@@ -106,10 +113,10 @@ class Test:
         for j in range(len(args)):
             row.append(args[j][(i + args_index[j]) % len(args[j])])
 
-        if len(args) > 1:
-            return row[0], row[1:]
+        if len(args) > 2:
+            return row[0], row[1], row[2:]
         else:
-            return row[0], []
+            return row[0], row[1], []
 
     def _thread_send_transactions(self, time_interval, contract, function_name, th_args_index, args):
         # loop through args length
@@ -124,14 +131,15 @@ class Test:
             print("PUERTO DEL NODO: ", node.port)
             w3 = node.connect_to_node()
 
-            account, args_row = self._extract_row(i, th_args_index[1], args)
+            account, msg_value, args_row = self._extract_row(i, th_args_index[1], args)
+            print("MSG VALUE IS AND ARG IS", msg_value, args_row)
 
             if function_name == "constructor":
                 node = self.nodes[0]
                 w3 = node.connect_to_node()
-                contract.deploy(node, w3, account, args_row)
+                contract.deploy(node, w3, account, args_row, msg_value)
             else:
-                return_value = contract.contract_interaction(node, w3, account, function_name, args_row)
+                return_value = contract.contract_interaction(node, w3, account, function_name, args_row, msg_value)
                 print(return_value)
 
             #print("SLEEP TIME: ",time_interval - ((time.time() - start_time)))
@@ -179,7 +187,7 @@ class Test:
 
         for instruction in self.instructions:
             # populate data list of arg
-            args = [instruction.accounts] + self._get_args(instruction.args, instruction.number_of_executions)
+            args = [instruction.accounts] +self._get_args([instruction.msg_values], instruction.number_of_executions) +self._get_args(instruction.args, instruction.number_of_executions)
 
             threads_args_index = self._divide_load(args, instruction.number_of_executions, self.concurrency_number)
 

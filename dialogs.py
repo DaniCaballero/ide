@@ -1,5 +1,5 @@
 from PyQt6.QtWidgets import (QDialog, QDialogButtonBox, QVBoxLayout, QLabel, QComboBox, QLineEdit, QWidget,
-                             QHBoxLayout, QFrame, QToolButton, QPushButton, QTreeView, QSizePolicy, QFileDialog, QErrorMessage)
+                             QHBoxLayout, QFrame, QToolButton, QPushButton, QTreeView, QSizePolicy, QFileDialog, QErrorMessage, QGraphicsDropShadowEffect)
 from PyQt6.QtGui import QPalette, QColor, QIcon, QFileSystemModel
 from PyQt6.QtCore import QSize, Qt, QDir, pyqtSignal
 from PyQt6 import uic
@@ -418,7 +418,13 @@ class Test_Dialog(QDialog):
         self.test = Test()
 
     def add_instruction(self):
+        shadow = QGraphicsDropShadowEffect()
+        shadow.setBlurRadius(25)
+        shadow.setOffset(3)
+
         instruction = Instruction_Widget(self.contracts, self.test.accounts)
+        instruction.setGraphicsEffect(shadow)
+        shadow.setEnabled(True)
         self.scroll_widget_layout.addWidget(instruction)
 
     def create_accounts(self):
