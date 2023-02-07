@@ -26,18 +26,23 @@
    </item>
    <item>
     <layout class="QHBoxLayout" name="horizontalLayout_2">
+     <property name="leftMargin">
+      <number>50</number>
+     </property>
      <property name="topMargin">
-      <number>20</number>
+      <number>15</number>
+     </property>
+     <property name="rightMargin">
+      <number>50</number>
      </property>
      <item>
-      <widget class="QLabel" name="label_2">
-       <property name="text">
-        <string>Accounts:</string>
-       </property>
-      </widget>
-     </item>
-     <item>
       <widget class="QPushButton" name="select_accounts_btn">
+       <property name="sizePolicy">
+        <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+         <horstretch>0</horstretch>
+         <verstretch>0</verstretch>
+        </sizepolicy>
+       </property>
        <property name="styleSheet">
         <string notr="true">padding: 5px 15px;
 border: 1px solid #5b8cb9;
@@ -57,11 +62,37 @@ font-weight: bold;</string>
        </property>
        <property name="sizeHint" stdset="0">
         <size>
-         <width>198</width>
-         <height>20</height>
+         <width>102</width>
+         <height>17</height>
         </size>
        </property>
       </spacer>
+     </item>
+     <item>
+      <widget class="QPushButton" name="select_ether_btn">
+       <property name="sizePolicy">
+        <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+         <horstretch>0</horstretch>
+         <verstretch>0</verstretch>
+        </sizepolicy>
+       </property>
+       <property name="minimumSize">
+        <size>
+         <width>148</width>
+         <height>0</height>
+        </size>
+       </property>
+       <property name="styleSheet">
+        <string notr="true">padding: 5px 15px;
+border: 1px solid #5b8cb9;
+background-color: #5b8cb9;
+color: white;
+font-weight: bold;</string>
+       </property>
+       <property name="text">
+        <string>Select Ether </string>
+       </property>
+      </widget>
      </item>
     </layout>
    </item>
@@ -79,7 +110,7 @@ font-weight: bold;</string>
         <x>0</x>
         <y>0</y>
         <width>466</width>
-        <height>241</height>
+        <height>246</height>
        </rect>
       </property>
       <layout class="QHBoxLayout" name="horizontalLayout">

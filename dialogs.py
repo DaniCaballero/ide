@@ -553,9 +553,24 @@ class Argument_Dialog(QDialog):
         
         else:
             print("upss")
-            
 
+class Select_Ether_Dialog(Argument_Dialog):
+    def __init__(self):
+        super().__init__()
         
+        self.label.setText("Select Ether to send")
+
+        self.msg_values = Random(0,0)
+
+        self.ether_label = QLabel()
+        self.ether_label.setText("Wei denomination:")
+
+        self.select_wei_denomination = QComboBox()
+        self.select_wei_denomination.addItems(["wei", "gwei", "ether"])
+
+        self.gridLayout.addWidget(self.ether_label, 3, 0)
+        self.gridLayout.addWidget(self.select_wei_denomination, 3, 1)
+            
 class Instruction_Widget(QWidget):
     def __init__(self, contracts, accounts):
         super().__init__()
@@ -565,7 +580,7 @@ class Instruction_Widget(QWidget):
         self.argument_list = []
         self.accounts = accounts
         self.instruction_accounts = []
-        self.visibility = None
+        self.msg_values = None
 
         self.select_contract.addItems(self.contracts.keys())
         self.select_contract.currentIndexChanged.connect(self.set_versions)
@@ -585,6 +600,7 @@ class Instruction_Widget(QWidget):
             print(self.argument_list)
         
             self.instruction_accounts = [self.accounts[index] for index in dlg.selected_accounts]
+            self.msg_values = dlg.msg_values
         else:
             print("wains")
 
@@ -615,8 +631,6 @@ class Instruction_Widget(QWidget):
             for function in functions:
                 if function["name"] == function_name:
                     function_dict = function
-
-        self.visibility = function_dict["stateMutability"]
         
         self.arguments = [(input["name"], input["type"]) for input in function_dict["inputs"]]
 
@@ -626,7 +640,7 @@ class Instruction_Widget(QWidget):
         exec_n = self.iterations.value()
         time_interval = self.time_interval.value()
 
-        return Instruction(contract, function_name, exec_n, self.argument_list, self.visibility, time_interval, self.instruction_accounts)
+        return Instruction(contract, function_name, exec_n, self.argument_list, self.msg_values, time_interval, self.instruction_accounts)
 
 
 class Argument_Widget_v2(QWidget):
@@ -661,10 +675,13 @@ class List_Arguments_Dialog(QDialog):
         self.accounts = accounts
         self.selected_accounts = []
 
+        self.msg_values = Random(0,0, "ether denomination", "wei")
+
         self.scroll_widget_layout = QVBoxLayout()
         self.scroll_widget_layout.setAlignment(Qt.AlignmentFlag.AlignTop)
 
         self.select_accounts_btn.clicked.connect(self.add_accounts)
+        self.select_ether_btn.clicked.connect(self.add_ether_values)
 
         self.widget.setLayout(self.scroll_widget_layout)
         self.add_widgets(args)
@@ -687,6 +704,16 @@ class List_Arguments_Dialog(QDialog):
 
         if dlg.exec():
             self.selected_accounts = dlg.get_selected_accounts_indexes()
+        else:
+            pass
+
+    def add_ether_values(self):
+        dlg = Select_Ether_Dialog()
+
+        if dlg.exec():
+            self.msg_values = dlg.get_checked_button_values()
+            self.msg_values.type = dlg.select_wei_denomination.currentText()
+            self.msg_values.name = "ether denomination"
         else:
             pass
 
