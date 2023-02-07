@@ -3,6 +3,7 @@ from PyQt6.QtWidgets import QTextEdit
 from pathlib import Path
 from PyQt6.Qsci import QsciScintilla, QsciLexerPython, QsciLexerJavaScript, QsciAPIs
 from PyQt6.QtGui import QColor, QFont
+from PyQt6.QtCore import QAbstractListModel, Qt
 from solidity_lexer import CustomSolidityLexer
 
 class Project:
@@ -135,3 +136,17 @@ class Editor(QsciScintilla):
             self.api = QsciAPIs(self.lexer)
             self.setLexer(self.lexer)
             self.api.prepare()
+
+class Select_Accounts_Model(QAbstractListModel):
+    def __init__(self, accounts):
+        super().__init__()
+        self.accounts = accounts
+
+    def data(self, index, role):
+        if role == Qt.ItemDataRole.DisplayRole:
+            account_address = self.accounts[index.row()].address
+
+            return account_address
+
+    def rowCount(self, index):
+        return len(self.accounts)

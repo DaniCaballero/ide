@@ -30,6 +30,9 @@ color: #5b8cb9;</string>
      <property name="styleSheet">
       <string notr="true">margin: 20px 0px;</string>
      </property>
+     <property name="selectionMode">
+      <enum>QAbstractItemView::ExtendedSelection</enum>
+     </property>
     </widget>
    </item>
    <item>

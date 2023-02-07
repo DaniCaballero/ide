@@ -43,8 +43,9 @@ def contract_interaction(network, w3, account, contract, function_name, visibili
         function_tx = contract_instance.functions[function_name](*casted_args).build_transaction(tx)
         signed_tx = account.sign_transaction(w3, function_tx)
         tx_hash = w3.eth.send_raw_transaction(signed_tx.rawTransaction)
+        
+        tx_receipt = w3.eth.wait_for_transaction_receipt(tx_hash)
         return f"Transaction hash: {tx_hash.hex()}\n"
-        #tx_receipt = w3.eth.wait_for_transaction_receipt(tx_hash)
 
         #state.output.append(f"Transaction receipt: {tx_receipt}\n")
     

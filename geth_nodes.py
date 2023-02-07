@@ -71,12 +71,12 @@ def init_geth_nodes(number_of_nodes, nodes_path, miner):
             process =subprocess.Popen(['geth', '--identity', f'{i}', '--http', '--http.port', f'{ports[0]}',
                         '--authrpc.port', f"{ports[1]}",'--http.corsdomain', "*", '--datadir', os.path.join(nodes_path, f"node{i}"),
                         '--port', f'{ports[2]}', '--nodiscover','--networkid', '1325', '--http.api', 'eth,net,web3,personal,miner,admin',
-                        '--allow-insecure-unlock', '--ipcdisable', '--nat', 'any', '--syncmode', 'full', '--unlock', f"{miner.address}", '--password', os.path.join(nodes_path, "pwd.txt"), '--mine'])
+                        '--allow-insecure-unlock', '--ipcdisable', '--nat', 'any', '--syncmode', 'full', '--unlock', f"{miner.address}", '--password', os.path.join(nodes_path, "pwd.txt"), '--mine', '--verbosity', "5"])
         else:
             process =subprocess.Popen(['geth', '--identity', f'{i}', '--http', '--http.port', f'{ports[0]}',
                             '--authrpc.port', f"{ports[1]}",'--http.corsdomain', "*", '--datadir', os.path.join(nodes_path, f"node{i}"),
                             '--port', f'{ports[2]}', '--nodiscover','--networkid', '1325', '--http.api', 'eth,net,web3,personal,miner,admin',
-                            '--allow-insecure-unlock', '--ipcdisable', '--nat', 'any', '--syncmode', 'full'])
+                            '--allow-insecure-unlock', '--ipcdisable', '--nat', 'any', '--syncmode', 'full', '--verbosity', "5"])
 
         pids.append(process.pid)
 

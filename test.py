@@ -18,7 +18,7 @@ def create_genesis_block(accounts, miner, test_path):
             "muirGlacierBlock": 0,
             "londonBlock" : 0,
             "clique": {
-                "period": 5,
+                "period": 3,
                 "epoch": 30000
             }
             }
@@ -62,11 +62,11 @@ class Test:
     def __str__(self):
         return f"{self.instructions}"
 
-    def _get_args(self, args):
+    def _get_args(self, args, iters):
         data = []
         
         for arg in args:
-            data.append(arg.generate_data())
+            data.append(arg.generate_data(iters))
 
         return data
 
@@ -117,13 +117,24 @@ class Test:
         start_time = time.time()
 
         for i in range(n_iter):
-            w3 = random.choice(self.nodes)
+            node = random.choice(self.nodes)
+            print("PUERTO DEL NODO: ", node.port)
+            w3 = node.connect_to_node()
 
             account, args_row = self._extract_row(i, th_args_index[1], args)
 
-            contract_interaction("geth", w3, account, contract, function_name, visibility, args_types, args_row)
+            if function_name == "constructor":
+                node = self.nodes[0]
+                w3 = node.connect_to_node()
+                print("DEPLOYMENT ARGS: ", account.address, args_types, args_row)
+                contract.deploy(w3, node.chain_id, account, args_types, args_row)
+            else:
+                return_value = contract_interaction(node, w3, account, contract, function_name, visibility, args_types, args_row)
+                print(return_value)
 
-            time.sleep(time_interval - ((time.time() - start_time)))
+            #print("SLEEP TIME: ",time_interval - ((time.time() - start_time)))
+            time.sleep(max(time_interval - ((time.time() - start_time)), 0))
+            
             start_time = time.time()
 
     def end_geth_processes(self, pids):
@@ -131,8 +142,8 @@ class Test:
             os.kill(pid, signal.SIGINT)
 
     def configure_evironment(self):
-        #for i in range(3):
-        #    print("PRIVAT KEY: ", self.accounts[i].address, self.accounts[i].private_key)
+        for i in range(3):
+            print("PRIVAT KEY: ", self.accounts[i].address, self.accounts[i].private_key)
         
         test_path = os.path.join(self.project_path, "tests", self.name)
         try:
@@ -150,6 +161,8 @@ class Test:
         self.nodes = [Local_Network("geth", "", 1325, port) for port in http_ports]
         print("Si alcanzo este punto")
 
+        return pids
+
     def run(self):
         # for instructions
         # initialize arguments
@@ -162,31 +175,44 @@ class Test:
         # write result to file?
 
 
-        time.sleep(5)
+        pids = self.configure_evironment()
 
         #self.end_geth_processes(pids)
-
-        return
-
         for instruction in self.instructions:
             # populate data list of arg
-            args = [instruction.accounts] + self._get_args(instruction.args)
-            args_types = [arg.type for arg in args]
+            args = [instruction.accounts] + self._get_args(instruction.args, instruction.number_of_executions)
+            #print("INSTRUCTION ARGS: ", args)
+            args_types = [arg.type for arg in instruction.args]
 
             threads_args_index = self._divide_load(args, instruction.number_of_executions, self.concurrency_number)
+            #print("THREAD DIVISION: ", threads_args_index)
+
+            # if instruction.function_name != "constructor":
             threads = [threading.Thread(target=self._thread_send_transactions, args=(instruction.time_interval,
-                        instruction.contract, instruction.function_name, "function", th_args, args, args_types,)) for th_args in threads_args_index]
+                        instruction.contract, instruction.function_name, instruction.visibility, th_args, args, args_types,)) for th_args in threads_args_index]
+
+            #self._thread_send_transactions(instruction.time_interval,instruction.contract, instruction.function_name, instruction.visibility, threads_args_index[0], args, args_types)
 
             # Start threads
             for th in threads:
                 th.start()
-
+            print("Aqui si llego no???")
+            print("THREADS: ", threads)
             # Wait for all threads to finish to move onto the next transaction
             for th in threads:
                 th.join()
 
+            # else:
+            #for th_args in threads_args_index:
+                #print("por acaaa")
+            #self._thread_send_transactions(instruction.time_interval,instruction.contract, instruction.function_name, instruction.visibility, threads_args_index[0], args, args_types)
+
+            print("UWUUUUUU")
+
+        self.end_geth_processes(pids)
+
 class Instruction:
-    def __init__(self, contract, function_name, number_of_executions , args, time_interval=0,accounts=[], use_csv=False):
+    def __init__(self, contract, function_name, number_of_executions, args, visibility, time_interval=0,accounts=[], use_csv=False):
         self.contract = contract
         self.function_name = function_name
         self.accounts = accounts
@@ -194,6 +220,7 @@ class Instruction:
         self.time_interval = time_interval
         self.use_csv = use_csv
         self.args = args
+        self.visibility = visibility
 
     def __str__(self):
         return f"{self.function_name}, {self.number_of_executions}"
@@ -208,7 +235,7 @@ class Argument:
         self.type = type
         self.data = []
 
-    def generate_data(self):
+    def generate_data(self, iterations):
         pass
 
     def __str__(self):
@@ -226,7 +253,7 @@ class Sequence(Argument):
         self.max = _max
         self.step = step
 
-    def generate_data(self):
+    def generate_data(self, iterations):
         self.data = list(range(self.min, self.max, self.step))
 
 class Random(Argument):
@@ -240,13 +267,16 @@ class Random(Argument):
     def get_next_arg(self):
         return random.randint(self.min, self.max)
 
+    def generate_data(self, iterations):
+        return [random.randint(self.min, self.max) for i in range(iterations)]
+
 class File(Argument):
     def __init__(self, file_path, name="", type=""):
         super().__init__(name, type)
 
         self.path = file_path
 
-    def generate_data(self):
+    def generate_data(self, iterations):
         try:
             df = pandas.read_csv(self.path)
             self.data = list(df[self.name])

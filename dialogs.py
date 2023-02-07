@@ -7,7 +7,7 @@ import os, threading
 from pathlib import Path
 from collapsible import CollapsibleBox
 from interact import contract_interaction
-from project import Editor
+from project import Editor, Select_Accounts_Model
 from test import Sequence, Random, File, Test, Instruction
 
 def get_button_box(dialog_obj):
@@ -418,7 +418,7 @@ class Test_Dialog(QDialog):
         self.test = Test()
 
     def add_instruction(self):
-        instruction = Instruction_Widget(self.contracts)
+        instruction = Instruction_Widget(self.contracts, self.test.accounts)
         self.scroll_widget_layout.addWidget(instruction)
 
     def create_accounts(self):
@@ -557,12 +557,15 @@ class Argument_Dialog(QDialog):
 
         
 class Instruction_Widget(QWidget):
-    def __init__(self, contracts):
+    def __init__(self, contracts, accounts):
         super().__init__()
         uic.loadUi("./ui/Instruction.ui", self)
         self.contracts = contracts
         self.arguments = []
         self.argument_list = []
+        self.accounts = accounts
+        self.instruction_accounts = []
+        self.visibility = None
 
         self.select_contract.addItems(self.contracts.keys())
         self.select_contract.currentIndexChanged.connect(self.set_versions)
@@ -574,12 +577,14 @@ class Instruction_Widget(QWidget):
         self.select_arguments.clicked.connect(self.select_args)
 
     def select_args(self):
-        dlg = List_Arguments_Dialog(self.arguments)
+        dlg = List_Arguments_Dialog(self.arguments, self.accounts)
 
         if dlg.exec():
             for i in range(dlg.scroll_widget_layout.count()):
                 self.argument_list.append(dlg.scroll_widget_layout.itemAt(i).widget().arg)
             print(self.argument_list)
+        
+            self.instruction_accounts = [self.accounts[index] for index in dlg.selected_accounts]
         else:
             print("wains")
 
@@ -610,8 +615,10 @@ class Instruction_Widget(QWidget):
             for function in functions:
                 if function["name"] == function_name:
                     function_dict = function
+
+        self.visibility = function_dict["stateMutability"]
         
-        self.arguments = [input["name"] for input in function_dict["inputs"]]
+        self.arguments = [(input["name"], input["type"]) for input in function_dict["inputs"]]
 
     def get_instruction(self):
         contract = self.contracts[self.select_contract.currentText()][self.select_version.currentIndex()]
@@ -619,17 +626,19 @@ class Instruction_Widget(QWidget):
         exec_n = self.iterations.value()
         time_interval = self.time_interval.value()
 
-        return Instruction(contract, function_name, exec_n, self.argument_list, time_interval)
+        return Instruction(contract, function_name, exec_n, self.argument_list, self.visibility, time_interval, self.instruction_accounts)
 
 
 class Argument_Widget_v2(QWidget):
-    def __init__(self, arg_name):
+    def __init__(self, arg):
         super().__init__()
         uic.loadUi("./ui/Argument_Widget_v2.ui", self)
 
         self.arg = None
+        self.arg_name = arg[0]
+        self.arg_type = arg[1]
 
-        self.label.setText(arg_name)
+        self.label.setText(self.arg_name)
         self.pushButton.clicked.connect(self.select_args)
 
 
@@ -638,14 +647,19 @@ class Argument_Widget_v2(QWidget):
 
         if dlg.exec():
             self.arg = dlg.get_checked_button_values()
+            self.arg.name = self.arg_name
+            self.arg.type = self.arg_type
             print(self.arg)
         else:
             print("NOOOO")
 
 class List_Arguments_Dialog(QDialog):
-    def __init__(self, args):
+    def __init__(self, args, accounts):
         super().__init__()
         uic.loadUi("./ui/List_Arguments_Dialog.ui", self)
+
+        self.accounts = accounts
+        self.selected_accounts = []
 
         self.scroll_widget_layout = QVBoxLayout()
         self.scroll_widget_layout.setAlignment(Qt.AlignmentFlag.AlignTop)
@@ -669,10 +683,10 @@ class List_Arguments_Dialog(QDialog):
         return True
 
     def add_accounts(self):
-        dlg = Select_Account_Dialog()
+        dlg = Select_Account_Dialog(self.accounts)
 
         if dlg.exec():
-            print("baaaa")
+            self.selected_accounts = dlg.get_selected_accounts_indexes()
         else:
             pass
 
@@ -686,9 +700,18 @@ class List_Arguments_Dialog(QDialog):
             error_message.showMessage("All arguments must be defined")
 
 class Select_Account_Dialog(QDialog):
-    def __init__(self):
+    def __init__(self, accounts):
         super().__init__()
         uic.loadUi("./ui/Select_Account_Dialog.ui", self)
+
+        self.model = Select_Accounts_Model(accounts)
+        self.listView.setModel(self.model)
+
+    def get_selected_accounts_indexes(self):
+        indexes = [index.row() for index in self.listView.selectedIndexes()]
+
+        return indexes
+
 
 
 

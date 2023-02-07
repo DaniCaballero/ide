@@ -18,7 +18,9 @@ class Contract:
         
         signed_tx = account.sign_transaction(w3 ,tx)
         tx_hash = w3.eth.send_raw_transaction(signed_tx.rawTransaction)
+        print("MANDE EL CONTRATO")
         tx_receipt = w3.eth.wait_for_transaction_receipt(tx_hash)
+        print("Pero no se confirma dfdfdf")
 
         self.address[chain_id] = tx_receipt.contractAddress
         #state.output.append(f"Contract deployed at: {tx_receipt.contractAddress}\n")
