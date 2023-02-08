@@ -55,7 +55,8 @@ class Contract:
         tx_receipt = self._sign_and_send_tx(tx, account, w3)
         self.address[network.chain_id] = tx_receipt.contractAddress
 
-        return f"Contract deployed at: {tx_receipt.contractAddress}\n"
+        #return f"Contract deployed at: {tx_receipt.contractAddress}\n"
+        return True, tx_receipt
 
     def contract_interaction(self, network, w3, account, function_name, args_list, msg_value = 0):
         visibility, type_list = self.get_function_visibility_input_types(function_name)
@@ -67,16 +68,16 @@ class Contract:
 
         if visibility == "view":
             value = contract_instance.functions[function_name](*casted_args).call({"from" : account.address})
-            return f"{function_name} output: {value}\n"
+            return True, value
 
         else:
             try:
                 tx = contract_instance.functions[function_name](*casted_args).build_transaction(tx)
                 tx_receipt = self._sign_and_send_tx(tx, account, w3)
 
-                return tx_receipt
+                return True, tx_receipt
             except Exception as e:
-                return e
+                return False, e
 
     def get_instance(self, w3, network):
         contract_instance = w3.eth.contract(address=self.address[network.chain_id], abi=self.abi)

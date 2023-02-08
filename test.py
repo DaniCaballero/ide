@@ -2,7 +2,7 @@ import random, pandas, time, threading, blocksmith, json, os, signal, decimal
 from account import Account, Test_Account
 from geth_nodes import init_geth_nodes, connect_nodes
 from network import Local_Network
-from web3 import Web3
+from web3 import Web3, datastructures
 
 
 def create_genesis_block(accounts, miner, test_path):
@@ -60,6 +60,7 @@ class Test:
         self.accounts = []
         self.project_path = project_path
         self.inst_count = 0
+        self.results = []
 
     def __str__(self):
         return f"{self.instructions}"
@@ -76,6 +77,26 @@ class Test:
             data.append(tmp_data)
 
         return data
+
+    def add_entry_to_results(self, contract_name, account_address, function_name, args, return_bool, return_value):
+        return_str = ""
+
+        if return_bool:
+            if type(return_value) == datastructures.AttributeDict:
+                return_str = return_value["transactionHash"].hex() 
+            else:
+                return_str = return_value
+        else:
+            return_str = return_value
+            
+        row = [contract_name, account_address, function_name, f"{args}", return_str]
+        self.results.append(row)
+
+    def generate_results_csv(self):
+        column_names = ["Contract Name", "Account", "Function Name", "Function arguments", "Return value/Tx hash"]
+        df = pandas.DataFrame(self.results, columns=column_names)
+        df.to_csv(os.path.join(self.project_path, "tests", self.name, "results.csv"))
+
 
     def calc_total_executions(self):
         total = 0
@@ -134,6 +155,7 @@ class Test:
         # send transaction trough contract interaction
         n_iter = th_args_index[0]
         start_time = time.time()
+        return_bool, return_value = False, ""
 
         for i in range(n_iter):
             node = random.choice(self.nodes)
@@ -144,19 +166,21 @@ class Test:
             if function_name == "constructor":
                 node = self.nodes[0]
                 w3 = node.connect_to_node()
-                contract.deploy(node, w3, account, args_row, msg_value)
+                return_bool, return_value = contract.deploy(node, w3, account, args_row, msg_value)
             else:
-                return_value = contract.contract_interaction(node, w3, account, function_name, args_row, msg_value)
-                print(return_value)
+                return_bool, return_value = contract.contract_interaction(node, w3, account, function_name, args_row, msg_value)
+                
 
-                try:
-                    status = w3.debug.traceTransaction(return_value['transactionHash'].hex())
-                    if len(status.structLogs) > 0:
-                        print("ERROR ES:", status.structLogs[-1].error)
-                except:
-                    pass
+                # try:
+                #     status = w3.debug.traceTransaction(return_value['transactionHash'].hex())
+                #     if len(status.structLogs) > 0:
+                #         print("ERROR ES:", status.structLogs[-1].error)
+                # except:
+                #     pass
 
             #print("SLEEP TIME: ",time_interval - ((time.time() - start_time)))
+            print("tyPE OF VALUE", type(return_value))
+            self.add_entry_to_results(contract.name, account.address, function_name, args_row, return_bool, return_value)
             time.sleep(max(time_interval - ((time.time() - start_time)), 0))
             
             start_time = time.time()
@@ -219,6 +243,7 @@ class Test:
             for th in threads:
                 th.join()
 
+        self.generate_results_csv()
         self.end_geth_processes(pids)
 
 class Instruction:
