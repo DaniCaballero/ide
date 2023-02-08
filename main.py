@@ -1,6 +1,6 @@
 from PyQt6.QtCore import QSize, Qt, QThread
 from PyQt6.QtWidgets import (QApplication, QWidget, QMainWindow, QLabel, QLineEdit, QVBoxLayout, QMenu, QHBoxLayout, QTextEdit, 
-                            QTabWidget, QStackedLayout, QFrame, QToolButton, QSplitter)
+                            QTabWidget, QStackedLayout, QFrame, QToolButton, QSplitter, QStyleFactory)
 from menu_functions import *
 from dialogs import Compile_Dialog, Add_Account_Dialog, Add_Node_Dialog, Deploy_Dialog, IPFS_Token_Dialog, Functions_Layout, Project_Widget, Left_Widget, Test_Dialog
 from account import Account, add_local_accounts
@@ -64,6 +64,10 @@ class MainWindow(QMainWindow):
 
         main_layout.addWidget(self.buttons_widget, 10)
         main_layout.addWidget(self.hsplit, 90)
+
+        print(QStyleFactory.keys())
+
+        #QApplication.setStyle('Fusion')
 
         container = QWidget()
         container.setLayout(main_layout)
@@ -247,6 +251,7 @@ class MainWindow(QMainWindow):
 
 
 app = QApplication([])
+
 
 window = MainWindow()
 window.show()

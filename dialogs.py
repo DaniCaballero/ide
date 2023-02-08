@@ -461,7 +461,19 @@ class Test_Dialog(QDialog):
     
     def run_test(self):
         try:
-            self.test.run()
+            total = self.test.calc_total_executions()
+            print("TOTAL NUMBER", total)
+            progress = 0
+
+            threading.Thread(target=self.test.run).start()
+            
+            while self.test.inst_count < total:
+                progress = self.test.inst_count * (100 // total)
+                self.progressBar.setValue(progress)
+
+            self.progressBar.setValue(100)
+                
+
         except Exception as e:
             print(e)
             

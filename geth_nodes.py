@@ -58,7 +58,7 @@ def init_geth_nodes(number_of_nodes, nodes_path, miner):
     for i in range(number_of_nodes):
         subprocess.Popen(['geth', '--datadir', os.path.join(nodes_path, f"node{i}"), 'init', os.path.join(nodes_path, 'genesis.json')])
 
-    time.sleep(5)
+    time.sleep(4)
 
     subprocess.Popen(['geth', '--datadir', os.path.join(nodes_path, "node0"),'--password', os.path.join(nodes_path, "pwd.txt"),'account', 'import', os.path.join(nodes_path, "key.txt")])
 
@@ -70,13 +70,13 @@ def init_geth_nodes(number_of_nodes, nodes_path, miner):
         if i == 0:
             process =subprocess.Popen(['geth', '--identity', f'{i}', '--http', '--http.port', f'{ports[0]}',
                         '--authrpc.port', f"{ports[1]}",'--http.corsdomain', "*", '--datadir', os.path.join(nodes_path, f"node{i}"),
-                        '--port', f'{ports[2]}', '--nodiscover','--networkid', '1325', '--http.api', 'eth,net,web3,personal,miner,admin',
-                        '--allow-insecure-unlock', '--ipcdisable', '--nat', 'any', '--syncmode', 'full', '--unlock', f"{miner.address}", '--password', os.path.join(nodes_path, "pwd.txt"), '--mine', '--verbosity', "5"])
+                        '--port', f'{ports[2]}', '--nodiscover','--networkid', '1325', '--http.api', 'eth,net,web3,personal,miner,admin,debug',
+                        '--allow-insecure-unlock', '--ipcdisable', '--nat', 'any', '--syncmode', 'full', '--unlock', f"{miner.address}", '--password', os.path.join(nodes_path, "pwd.txt"), '--mine', '--verbosity', "1"])
         else:
             process =subprocess.Popen(['geth', '--identity', f'{i}', '--http', '--http.port', f'{ports[0]}',
                             '--authrpc.port', f"{ports[1]}",'--http.corsdomain', "*", '--datadir', os.path.join(nodes_path, f"node{i}"),
-                            '--port', f'{ports[2]}', '--nodiscover','--networkid', '1325', '--http.api', 'eth,net,web3,personal,miner,admin',
-                            '--allow-insecure-unlock', '--ipcdisable', '--nat', 'any', '--syncmode', 'full', '--verbosity', "5"])
+                            '--port', f'{ports[2]}', '--nodiscover','--networkid', '1325', '--http.api', 'eth,net,web3,personal,miner,admin,debug',
+                            '--allow-insecure-unlock', '--ipcdisable', '--nat', 'any', '--syncmode', 'full', '--verbosity', "1"])
 
         pids.append(process.pid)
 

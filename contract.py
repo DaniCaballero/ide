@@ -70,10 +70,13 @@ class Contract:
             return f"{function_name} output: {value}\n"
 
         else:
-            tx = contract_instance.functions[function_name](*casted_args).build_transaction(tx)
-            tx_receipt = self._sign_and_send_tx(tx, account, w3)
+            try:
+                tx = contract_instance.functions[function_name](*casted_args).build_transaction(tx)
+                tx_receipt = self._sign_and_send_tx(tx, account, w3)
 
-            return f"Transaction hash: {tx_receipt['transactionHash'].hex()}\n"
+                return tx_receipt
+            except Exception as e:
+                return e
 
     def get_instance(self, w3, network):
         contract_instance = w3.eth.contract(address=self.address[network.chain_id], abi=self.abi)

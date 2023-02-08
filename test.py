@@ -59,6 +59,7 @@ class Test:
         self.nodes = []
         self.accounts = []
         self.project_path = project_path
+        self.inst_count = 0
 
     def __str__(self):
         return f"{self.instructions}"
@@ -75,6 +76,14 @@ class Test:
             data.append(tmp_data)
 
         return data
+
+    def calc_total_executions(self):
+        total = 0
+
+        for inst in self.instructions:
+            total += inst.number_of_executions
+
+        return total
 
     def create_accounts(self, acc_number):
         self.accounts = []
@@ -128,11 +137,9 @@ class Test:
 
         for i in range(n_iter):
             node = random.choice(self.nodes)
-            print("PUERTO DEL NODO: ", node.port)
             w3 = node.connect_to_node()
 
             account, msg_value, args_row = self._extract_row(i, th_args_index[1], args)
-            print("MSG VALUE IS AND ARG IS", msg_value, args_row)
 
             if function_name == "constructor":
                 node = self.nodes[0]
@@ -142,10 +149,18 @@ class Test:
                 return_value = contract.contract_interaction(node, w3, account, function_name, args_row, msg_value)
                 print(return_value)
 
+                try:
+                    status = w3.debug.traceTransaction(return_value['transactionHash'].hex())
+                    if len(status.structLogs) > 0:
+                        print("ERROR ES:", status.structLogs[-1].error)
+                except:
+                    pass
+
             #print("SLEEP TIME: ",time_interval - ((time.time() - start_time)))
             time.sleep(max(time_interval - ((time.time() - start_time)), 0))
             
             start_time = time.time()
+            self.inst_count += 1
 
     def end_geth_processes(self, pids):
         for pid in pids:
