@@ -29,15 +29,16 @@ class Project:
             print("Folder must be empty")
 
     def delete_project(self):
-        for dir in self.dir_names:
-            dir_path = os.path.join(self.path, dir)
-
+        if self.exists_project(self.path):
             try:
-                shutil.rmtree(dir_path, ignore_errors=False)
-            except OSError as error:
-                print(error)
-
-        print("Folders successfully deleted!")
+                for dir in self.dir_names:
+                    dir_path = os.path.join(self.path, dir)
+                    shutil.rmtree(dir_path, ignore_errors=False)
+                return True
+            except:
+                return False
+        else:
+            return False
 
     def exists_project(self, path):
         for dir in self.dir_names:

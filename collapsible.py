@@ -8,12 +8,17 @@ class CollapsibleBox(QtWidgets.QWidget):
         self.toggle_button = QtWidgets.QToolButton(
             text=title, checkable=True, checked=False
         )
-        self.toggle_button.setStyleSheet("QToolButton { border: none; }")
+
+        self.setStyleSheet("""QPushButton {border-radius: 4px; background-color: #5b8cb9; color: white; font-weight: bold; padding: 5px 2px}
+                            QPushButton::hover {background-color: #517da6} QLineEdit {border-radius: 4px; padding: 5px 2px}""")
+
+        self.toggle_button.setStyleSheet("QToolButton { border: none; background-color: white; padding: 5px}")
         self.toggle_button.setToolButtonStyle(
             QtCore.Qt.ToolButtonStyle.ToolButtonTextBesideIcon
         )
         self.toggle_button.setArrowType(QtCore.Qt.ArrowType.RightArrow)
         self.toggle_button.pressed.connect(self.on_pressed)
+        self.toggle_button.setSizePolicy(QtWidgets.QSizePolicy.Policy.Expanding, QtWidgets.QSizePolicy.Policy.Fixed)
 
         self.toggle_animation = QtCore.QParallelAnimationGroup(self)
 

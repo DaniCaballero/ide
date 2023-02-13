@@ -1,11 +1,28 @@
-from solcx import compile_standard, install_solc, get_installed_solc_versions
+from solcx import compile_standard, install_solc, get_installed_solc_versions, get_installable_solc_versions
 from packaging.version import Version
 from contract import Contract
 from pathlib import Path
 import json, os, operator, re
 import tkinter as tk
 
-COMPARE_METHODS = {"<" : operator.lt, ">" : operator.gt, "<=" : operator.le, ">=" : operator.ge, "^" : operator.eq}
+def custom_compare(version0, version1):
+    if version0.major == version1.major and version0.minor == version1.minor:
+        if version0.micro >= version1.micro:
+            return True
+    
+    return False
+
+COMPARE_METHODS = {"<" : operator.lt, ">" : operator.gt, "<=" : operator.le, ">=" : operator.ge, "^" : custom_compare, "==" : operator.eq}
+
+def compare_with_installable_solc_versions(version, compare_functions):
+    installable_versions = get_installable_solc_versions()
+    version_list = [Version(f"{ver.major}.{ver.minor}.{ver.patch}") for ver in installable_versions]
+
+    for ver in version_list:
+        if compare_functions[0](ver, Version(version[0])) and compare_functions[1](ver, Version(version[1])):
+            return (True, ver)
+
+    return False, version[0]
 
 #devolver tupla true con version que sirve o false con la version a instalar
 def is_solc_version_installed(version, compare_functions):
@@ -20,8 +37,10 @@ def is_solc_version_installed(version, compare_functions):
         for ver in ver_list:
             if compare_functions[0](ver, Version(version[0])) and compare_functions[1](ver, Version(version[1])):
                 return (True, ver)
+
+        return compare_with_installable_solc_versions(version, compare_functions)
     
-    return (False, "")
+    return (False, Version(version[0]))
 
 def get_pragma_string(line):
     pragma_line = line.replace("pragma solidity", "")
@@ -31,20 +50,24 @@ def get_pragma_string(line):
 
 def regex_match(pragma_line):
     versions, compare_methods, symbols = [], [], []
-    patterns = ['(>=|>).+(<=|<).+', '\^.+', '(<=|>=|<|>).+']
+    patterns = ['(>=|>)\d+\.\d+\.\d+\s?(<=|<)\d+\.\d+\.\d+', '\^\d+\.\d+\.\d+', '(<=|>=|<|>)\d+\.\d+\.\d+', '\d+\.\d+\.\d+']
 
     for pattern in patterns:
         result = re.match(pattern, pragma_line)
         if result:
-            if pattern == '\^.+':
+            if pattern == '\^\d+\.\d+\.\d+':
                 symbols = ['^']
+
+            elif pattern == '\d+\.\d+\.\d+':
+                symbols = ['==']
             else:
                 result_split = re.split(pattern, pragma_line)
                 symbols = [symbol for symbol in result_split if symbol]
 
             for symbol in symbols:
                 compare_methods.append(COMPARE_METHODS[symbol])
-                pragma_line = pragma_line.replace(symbol, "")
+                if symbol != "==":
+                    pragma_line = pragma_line.replace(symbol, "")
 
             versions = pragma_line.split()
     return versions, compare_methods
@@ -53,17 +76,21 @@ def regex_match(pragma_line):
 def get_pragma_version(state, file_name):
     contracts_folder_path = os.path.join(state.project.path, "contracts")
     file_path =  os.path.join(contracts_folder_path, file_name)
-    
-    with open(file_path, "r") as file:
-        for line in file:
-            if "pragma" in line:
-                pragma_line = line
-                break
-    
-    pragma_line = get_pragma_string(pragma_line)
-    pragma_versions, compare_methods = regex_match(pragma_line)
 
-    return is_solc_version_installed(pragma_versions, compare_methods)
+    try:
+        with open(file_path, "r") as file:
+            for line in file:
+                if "pragma" in line:
+                    pragma_line = line
+                    break
+
+        pragma_line = get_pragma_string(pragma_line)
+        pragma_versions, compare_methods = regex_match(pragma_line)
+        print("pragma version ", pragma_versions)
+
+        return is_solc_version_installed(pragma_versions, compare_methods)
+    except:
+        raise RuntimeError("Solidity version not found")
 
     
 def get_import_files(state):
@@ -126,23 +153,31 @@ def compile_contract(state, version, file_name, overwrite):
 
 def compile(compile_all, state, file_name, overwrite):
     contracts_tuple = []
-    ver_tuple = get_pragma_version(state, file_name)
-    version = f"{ver_tuple[1].major}.{ver_tuple[1].minor}.{ver_tuple[1].micro}"
-    
-    if ver_tuple[0] == False:
-        state.output.append(f"Installing solidity version {version}...\n")
-        install_solc(version, show_progress=False)
-        state.output.append(f"Installation complete!\n")
-    if compile_all == False:
-        try:
+
+    try:
+        ver_tuple = get_pragma_version(state, file_name)
+        print("VERSION TUPLE IS: ", ver_tuple)
+        version = f"{ver_tuple[1].major}.{ver_tuple[1].minor}.{ver_tuple[1].micro}"
+        
+        if ver_tuple[0] == False:
+            state.output.append(f"Installing solidity version {version}...\n")
+            install_solc(version, show_progress=False)
+            state.output.append(f"Installation complete!\n")
+        if compile_all == False:
             compiled_sol = compile_contract(state, version, file_name, overwrite)
             contracts_tuple.append((compiled_sol, file_name))
-        except Exception as e:
-            state.output.append(f"{e.message}\n")
-            return
-    else:
-        pass
+        else:
+            pass
+
         # compile everything in contracts folder. needs an order
-    write_json(contracts_tuple, state)
-    state.output.append(f"{file_name} contract successfully compiled\n")
+        write_json(contracts_tuple, state)
+        state.output.append(f"{file_name} contract successfully compiled\n")
+
+    except Exception as e:
+        try:
+            state.output.append(f"{e.message}\n")
+        except:
+            state.output.append(f"{e}\n")
+        return
+
 

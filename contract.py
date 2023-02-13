@@ -1,22 +1,66 @@
 import web3
 import re
 
-TYPE_CAST = {"uint" : web3.Web3.toInt, "bytes" : web3.Web3.toBytes}
+def get_substrings(string):
+    substrings, sublist = [], []
+    bracket_count = 0
+
+    for char in string:
+        if char == "[":
+            bracket_count += 1
+            sublist.append(char)
+        else:
+            if bracket_count > 0:
+                sublist.append(char)
+                if char == "]":
+                    bracket_count -= 1
+                    if bracket_count == 0:
+                        substrings.append("".join(sublist))
+                        sublist = []
+
+    return {f"placeholder{i}" : sublist for i, sublist in enumerate(substrings)}
+
+def find_replace_split(string):
+    sublist_dict = get_substrings(string)
+
+    for key, sublist in sublist_dict.items():
+        string = string.replace(sublist, key)
+
+    string_list = string.split(",")
+
+    string_list = [item.strip() for item in string_list]
+
+    for key, sublist in sublist_dict.items():
+        index = string_list.index(key)
+        string_list[index] = sublist
+
+    return string_list
+    
+
+TYPE_CAST = {"uint" : web3.Web3.toInt, "bytes" : web3.Web3.toBytes, "address" : web3.Web3.toChecksumAddress}
 
 def cast_web3_helper(arg_type, args, list_bool, temp):
     arg_type_tmp = re.sub('\d', '', arg_type)
 
     if arg_type_tmp in TYPE_CAST.keys():
         if list_bool:
-            args = [TYPE_CAST[arg_type_tmp](text=i) for i in args]
-            temp.append(args)
+            if arg_type_tmp == "address":
+                args = [TYPE_CAST[arg_type_tmp](i) for i in args]
+                temp.append(args)
+            else:
+                args = [TYPE_CAST[arg_type_tmp](text=i) for i in args]
+                temp.append(args)
         else:
-            temp.append(TYPE_CAST[arg_type_tmp](text=args))
+            if arg_type_tmp == "address":
+                temp.append(TYPE_CAST[arg_type_tmp](args))
+            else:
+                temp.append(TYPE_CAST[arg_type_tmp](text=args))
     else:
         temp.append(args)
 
 def cast_web3_types(type_list, args_list):
     temp = []
+    print("TYPES:", type_list, args_list)
 
     for arg_type, arg in zip(type_list, args_list):
         if arg_type.endswith("[]"):

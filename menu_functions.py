@@ -8,7 +8,7 @@ from dialogs import Compile_Dialog, Add_Account_Dialog, Add_Node_Dialog, Deploy_
 from account import Account, add_local_accounts
 from network import Network, init_ganache
 from ipfs import IPFS
-from interact import contract_interaction
+from contract import find_replace_split
 
 def create_menu_option(option_name, label_list, command_list, shortcut_list, menu, window):
     menu_item = menu.addMenu(option_name)
@@ -116,10 +116,11 @@ def compile_file(state):
 
     if dlg.exec():
         file_name = dlg.get_file()
+        overwrite = dlg.overwrite_btn.isChecked()
 
         if file_name != "":
             compile_all = False
-            compile_thread = threading.Thread(target=compile, args=(compile_all, state, file_name, True)).start()
+            threading.Thread(target=compile, args=(compile_all, state, file_name, overwrite)).start()
             
 
 def add_account(state):
@@ -171,7 +172,7 @@ def deploy_contract(state):
             version = dlg.get_version()
             contract = state.contracts[contract_name][version]
             contract_arg_types = contract.get_constructor()
-            constructor_args = dlg.constructor_args.text().split(",")
+            constructor_args = find_replace_split(dlg.constructor_args.text())
             network_name = dlg.get_network()
             network = state.networks[network_name]
             account_name = dlg.get_account()
@@ -184,13 +185,13 @@ def deploy_contract(state):
             w3 = network.connect_to_node()
 
             #threading.Thread(target=contract.deploy, args=(w3, network.chain_id, account, state, contract_arg_types, constructor_args,)).start()
-            result = contract.deploy(w3, network.chain_id, account, contract_arg_types, constructor_args)
+            _, tx_receipt = contract.deploy(network, w3, account, constructor_args)
 
-            state.add_to_output(result)
+            state.add_to_output(tx_receipt.contractAddress)
             # chequear si el thread finalizo bien primero
             state.functions_widget.insert_function(state, contract)
-        except:
-            pass
+        except Exception as e:
+            print(e)
 
 def add_token_id(state):
     dlg = IPFS_Token_Dialog(state)

@@ -1,14 +1,15 @@
 from PyQt6.QtWidgets import (QDialog, QDialogButtonBox, QVBoxLayout, QLabel, QComboBox, QLineEdit, QWidget,
-                             QHBoxLayout, QFrame, QToolButton, QPushButton, QTreeView, QSizePolicy, QFileDialog, QErrorMessage, QGraphicsDropShadowEffect)
-from PyQt6.QtGui import QPalette, QColor, QIcon, QFileSystemModel
-from PyQt6.QtCore import QSize, Qt, QDir, pyqtSignal
+                             QHBoxLayout, QFrame, QToolButton, QPushButton, QTreeView, QSizePolicy, QFileDialog, 
+                             QErrorMessage, QGraphicsDropShadowEffect, QCheckBox)
+from PyQt6.QtGui import QPalette, QColor, QIcon, QFileSystemModel, QRgba64
+from PyQt6.QtCore import QSize, Qt, QDir, pyqtSignal, QThread
 from PyQt6 import uic
 import os, threading
 from pathlib import Path
 from collapsible import CollapsibleBox
-from interact import contract_interaction
+from contract import find_replace_split
 from project import Editor, Select_Accounts_Model
-from test import Sequence, Random, File, Test, Instruction
+from test import Sequence, Random, File, Test, Instruction, Worker
 
 def get_button_box(dialog_obj):
     QBtn = QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel
@@ -22,6 +23,41 @@ def add_widgets_to_layout(layout, widget_list):
     for widget in widget_list:
         layout.addWidget(widget)
 
+class Create_Project_Dialog(QDialog):
+    def __init__(self):
+        super().__init__()
+        uic.loadUi('./ui/Create_Project_Dialog.ui', self)
+
+        self.project_name.textChanged.connect(self.enable_disable_buttons)
+        self.project_path.textChanged.connect(self.enable_disable_buttons)
+        self.browse_btn.clicked.connect(self.get_path)
+
+        self.buttonBox.button(QDialogButtonBox.StandardButton.Ok).setEnabled(False)
+
+    def get_path(self):
+        path = QFileDialog.getExistingDirectory(self, "Select Directory")
+
+        self.project_path.setText(path)
+
+    def enable_disable_buttons(self):
+        path = self.project_path.text()
+
+        if Path(path).exists() and path != "" and self.project_name.text() != "":
+            self.buttonBox.button(QDialogButtonBox.StandardButton.Ok).setEnabled(True)
+        else:
+            self.buttonBox.button(QDialogButtonBox.StandardButton.Ok).setEnabled(False)
+
+    def accept(self):
+        path = self.project_path.text()
+        project_name = self.project_name.text()
+
+        if Path(os.path.join(path, project_name)).exists():
+            error_message = QErrorMessage(self)
+            error_message.showMessage("Folder already exists")
+            return
+
+        return super().accept()
+
 class Compile_Dialog(QDialog):
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -33,9 +69,12 @@ class Compile_Dialog(QDialog):
         self.select_file = QComboBox(self)
         self.select_file.currentIndexChanged.connect(self.set_enabled_button)
 
+        self.overwrite_btn = QCheckBox("Overwrite contract information")
+        self.overwrite_btn.setChecked(True)
+
         self.layout = QVBoxLayout()
         msg = QLabel("Select a file to compile")
-        add_widgets_to_layout(self.layout, [msg, self.select_file, self.button_box])
+        add_widgets_to_layout(self.layout, [msg, self.select_file, self.overwrite_btn, self.button_box])
         self.setLayout(self.layout)
 
     def set_files(self, files_names):
@@ -112,12 +151,9 @@ class Deploy_Dialog(QDialog):
         self.contract_signal.emit(contract)
 
     def set_versions(self, versions):
-        ver_list = []
+        self.select_version.clear()
 
-        for i in range(versions):
-            ver_list.append(f"v{i}")
-
-        self.select_version.addItems(ver_list)
+        self.select_version.addItems([f"v{i}" for i in range(versions)])
 
     def set_button_enabled(self):
         if self.select_contract.currentText() != "" and self.select_network.currentText() != "" and self.select_account.currentText() != "":
@@ -231,7 +267,7 @@ class Functions_Layout(QWidget):
         self.app = parent
         self.setAutoFillBackground(True)
         palette = self.palette()
-        palette.setColor(QPalette.ColorRole.Window, QColor('#D4DFEC'))
+        palette.setColor(QPalette.ColorRole.Window, QColor("#e8e8e8"))
         self.setPalette(palette)
 
         select_network_layout = QHBoxLayout()
@@ -294,12 +330,12 @@ class Functions_Layout(QWidget):
                 input_str = ",".join(input_types)
                 line_edit = QLineEdit()
                 line_edit.setPlaceholderText(input_str)
-                btn.clicked.connect(lambda checked, func=func, input_types=input_types, line_edit=line_edit: self.interact_with_contract(state, contract, func["name"],
-                func["stateMutability"], input_types,line_edit.text().split(",")))
+                btn.clicked.connect(lambda checked, func=func, input_types=input_types, line_edit=line_edit: self.interact_with_contract(contract, func["name"],
+                find_replace_split(line_edit.text())))
                 add_widgets_to_layout(func_layout, [btn, line_edit])
             else:
-                btn.clicked.connect(lambda checked, func=func: self.interact_with_contract(state, contract, func["name"],
-                func["stateMutability"], input_types, []))
+                btn.clicked.connect(lambda checked, func=func: self.interact_with_contract(contract, func["name"],
+                []))
                 add_widgets_to_layout(func_layout, [btn])
 
             box_layout.addLayout(func_layout)
@@ -307,7 +343,7 @@ class Functions_Layout(QWidget):
         box.setContentLayout(box_layout)
         self.layout.addWidget(box)
     
-    def interact_with_contract(self, *args):
+    def interact_with_contract(self, contract, *args):
         network_name = self.select_network.currentText()
         network = self.app.networks[network_name]
         w3 = network.connect_to_node()
@@ -318,9 +354,9 @@ class Functions_Layout(QWidget):
             account = self.app.accounts["persistent"][self.select_account.currentText()]
 
         #threading.Thread(target=contract_interaction, args=(network, w3, account,*args,)).start()
-        result = contract_interaction(network, w3, account, *args)
+        _, result = contract.contract_interaction(network, w3, account, *args)
 
-        self.function_signal.emit(result)
+        self.function_signal.emit(str(result))
 
 class Project_Widget(QWidget):
     def __init__(self, parent):
@@ -329,7 +365,7 @@ class Project_Widget(QWidget):
         self.parent = parent 
         self.setAutoFillBackground(True)
         palette = self.palette()
-        palette.setColor(QPalette.ColorRole.Window, QColor('#f2f5ff'))
+        palette.setColor(QPalette.ColorRole.Window, QColor("#e8e8e8"))
         self.setContentsMargins(0,0,0,0)
         self.setPalette(palette)
 
@@ -411,16 +447,23 @@ class Test_Dialog(QDialog):
         self.create_accounts_btn.clicked.connect(self.create_accounts)
         self.create_test_btn.clicked.connect(self.create_test)
 
+        qcombobox = """QComboBox {border: 1px solid #ced4da; border-radius: 4px;padding-left: 10px;background-color: #f2f5ff} QComboBox::drop-down {border: none} QComboBox::down-arrow {image: url(./down.png); width: 12px; height: 12px; margin-right: 15px}
+                    QPushButton {border-radius: 4px} #Dialog {background-color: white}"""
+                    
+
         self.scroll_widget_layout = QVBoxLayout()
         self.scroll_widget_layout.setAlignment(Qt.AlignmentFlag.AlignTop)
         self.scroll_widget.setLayout(self.scroll_widget_layout)
+
+        self.setStyleSheet(qcombobox)
 
         self.test = Test()
 
     def add_instruction(self):
         shadow = QGraphicsDropShadowEffect()
         shadow.setBlurRadius(25)
-        shadow.setOffset(3)
+        shadow.setColor(QColor("#ADAAB5"))
+        shadow.setOffset(4)
 
         instruction = Instruction_Widget(self.contracts, self.test.accounts)
         instruction.setGraphicsEffect(shadow)
@@ -460,22 +503,24 @@ class Test_Dialog(QDialog):
         print(self.instructions)
     
     def run_test(self):
-        try:
-            total = self.test.calc_total_executions()
-            print("TOTAL NUMBER", total)
-            progress = 0
 
-            threading.Thread(target=self.test.run).start()
-            
-            while self.test.inst_count < total:
-                progress = self.test.inst_count * (100 // total)
-                self.progressBar.setValue(progress)
+        threading.Thread(target=self.test.run).start()
 
-            self.progressBar.setValue(100)
-                
+        self.thread = QThread()
 
-        except Exception as e:
-            print(e)
+        worker = Worker(self.test)
+        worker.moveToThread(self.thread)
+        worker.progressChanged.connect(self.progressBar.setValue)
+        self.thread.started.connect(worker.work)
+
+        worker.finished.connect(self.thread.quit)
+        worker.finished.connect(worker.deleteLater)
+        self.thread.finished.connect(self.thread.deleteLater)
+
+        self.thread.worker = worker
+
+        self.thread.start()
+
             
 
 class Argument_Dialog(QDialog):
@@ -602,6 +647,9 @@ class Instruction_Widget(QWidget):
 
         self.select_contract.addItems(self.contracts.keys())
         self.select_contract.currentIndexChanged.connect(self.set_versions)
+
+        self.delete_btn.setIcon(QIcon('./clear.png'))
+        self.delete_btn.clicked.connect(self.delete_widget)
         
         self.select_version.currentIndexChanged.connect(self.set_functions)
 
@@ -609,12 +657,25 @@ class Instruction_Widget(QWidget):
 
         self.select_arguments.clicked.connect(self.select_args)
 
+    def delete_widget(self):
+        parent_layout = self.parent().layout()
+        parent_layout.removeWidget(self)
+        self.deleteLater()
+        del self
+
     def select_args(self):
         dlg = List_Arguments_Dialog(self.arguments, self.accounts)
 
         if dlg.exec():
-            for i in range(dlg.scroll_widget_layout.count()):
-                self.argument_list.append(dlg.scroll_widget_layout.itemAt(i).widget().arg)
+            if dlg.checkBox.isChecked():
+                file_path = dlg.file_path.text()
+
+                for arg in self.arguments:
+                    self.argument_list.append(File(file_path, arg[0], arg[1]))
+            else:
+                for i in range(dlg.scroll_widget_layout.count()):
+                    self.argument_list.append(dlg.scroll_widget_layout.itemAt(i).widget().arg)
+
             print(self.argument_list)
         
             self.instruction_accounts = [self.accounts[index] for index in dlg.selected_accounts]
@@ -623,12 +684,16 @@ class Instruction_Widget(QWidget):
             print("wains")
 
     def set_versions(self, index):
+        self.select_version.clear()
+
         versions = len(self.contracts[self.select_contract.currentText()])
 
         self.select_version.clear()
         self.select_version.addItems([str(i) for i in range(versions)])
 
     def set_functions(self, index):
+        self.select_function.clear()
+
         contract = self.contracts[self.select_contract.currentText()][index]
         functions = contract.get_functions()
 
@@ -690,6 +755,8 @@ class List_Arguments_Dialog(QDialog):
         super().__init__()
         uic.loadUi("./ui/List_Arguments_Dialog.ui", self)
 
+        self.resize(400,400)
+
         self.accounts = accounts
         self.selected_accounts = []
 
@@ -700,6 +767,8 @@ class List_Arguments_Dialog(QDialog):
 
         self.select_accounts_btn.clicked.connect(self.add_accounts)
         self.select_ether_btn.clicked.connect(self.add_ether_values)
+        self.checkBox.toggled.connect(self.enable_disable_widgets)
+        self.browse_btn.clicked.connect(self.get_path)
 
         self.widget.setLayout(self.scroll_widget_layout)
         self.add_widgets(args)
@@ -716,6 +785,17 @@ class List_Arguments_Dialog(QDialog):
                 return False
         
         return True
+
+    def enable_disable_widgets(self):
+        checked_bool = self.checkBox.isChecked()
+
+        self.file_path.setEnabled(checked_bool)
+        self.browse_btn.setEnabled(checked_bool)
+
+    def get_path(self):
+        path, _ = QFileDialog.getOpenFileName(self, "Open File", "", "All files (*)")
+
+        self.file_path.setText(path)
 
     def add_accounts(self):
         dlg = Select_Account_Dialog(self.accounts)
@@ -736,13 +816,15 @@ class List_Arguments_Dialog(QDialog):
             pass
 
     def accept(self):
-        are_args_valid = self.check_valid_args()
-
-        if are_args_valid:
+        if self.checkBox.isChecked() and Path(self.file_path.text()).exists() and self.file_path.text() != "":
             return super().accept()
         else:
-            error_message = QErrorMessage(self)
-            error_message.showMessage("All arguments must be defined")
+            are_args_valid = self.check_valid_args()
+            if are_args_valid:
+                return super().accept()
+
+        error_message = QErrorMessage(self)
+        error_message.showMessage("All arguments must be defined")
 
 class Select_Account_Dialog(QDialog):
     def __init__(self, accounts):

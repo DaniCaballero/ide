@@ -1,4 +1,5 @@
 import random, pandas, time, threading, blocksmith, json, os, signal, decimal
+from PyQt6.QtCore import QThread, QObject, pyqtSignal
 from account import Account, Test_Account
 from geth_nodes import init_geth_nodes, connect_nodes
 from network import Local_Network
@@ -179,12 +180,14 @@ class Test:
                 #     pass
 
             #print("SLEEP TIME: ",time_interval - ((time.time() - start_time)))
-            print("tyPE OF VALUE", type(return_value))
-            self.add_entry_to_results(contract.name, account.address, function_name, args_row, return_bool, return_value)
             time.sleep(max(time_interval - ((time.time() - start_time)), 0))
             
             start_time = time.time()
+
+            lock.acquire()
+            self.add_entry_to_results(contract.name, account.address, function_name, args_row, return_bool, return_value)
             self.inst_count += 1
+            lock.release()
 
     def end_geth_processes(self, pids):
         for pid in pids:
@@ -208,7 +211,6 @@ class Test:
         connect_nodes(http_ports)
 
         self.nodes = [Local_Network("geth", "", 1325, port) for port in http_ports]
-        print("Si alcanzo este punto")
 
         return pids
 
@@ -222,6 +224,9 @@ class Test:
         # pick a node
         # send transaction
         # write result to file?
+        global lock
+        lock = threading.Lock()
+
         pids = self.configure_evironment()
 
         for instruction in self.instructions:
@@ -291,6 +296,8 @@ class Sequence(Argument):
     def generate_data(self, iterations):
         self.data = list(range(self.min, self.max, self.step))
 
+        return self.data
+
 class Random(Argument):
     def __init__(self, _min, _max, name = "", type = ""):
         super().__init__(name, type)
@@ -312,13 +319,37 @@ class File(Argument):
         self.path = file_path
 
     def generate_data(self, iterations):
-        try:
-            df = pandas.read_csv(self.path)
-            self.data = list(df[self.name])
-        except:
-            raise Exception
+        df = pandas.read_csv(self.path, sep=";")
+
+        self.data = list(df[self.name])
+        #print("DATOS", self.data)
+        return self.data
+
 
 # class for data that need to be uploaded to IPFS to obtain the identifier that will be in the contract
 class IPFS_Data:
     def __init__(self, folder_path):
         self.path = folder_path
+
+class Worker(QObject):
+    progressChanged = pyqtSignal(int)
+    finished = pyqtSignal()
+
+    def __init__(self, test):
+        super().__init__()
+        self.test = test
+
+    def work(self):
+        count, progress = 0, 0
+        total_instructions = self.test.calc_total_executions()
+
+        while count <= total_instructions:
+            count = self.test.inst_count
+            progress = int(count * (100 / total_instructions))
+            #print("progress",progress)
+            self.progressChanged.emit(progress)
+
+            if count == total_instructions:
+                print(progress)
+                self.finished.emit()
+                break

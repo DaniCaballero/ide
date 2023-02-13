@@ -1,8 +1,9 @@
 from PyQt6.QtCore import QSize, Qt, QThread
 from PyQt6.QtWidgets import (QApplication, QWidget, QMainWindow, QLabel, QLineEdit, QVBoxLayout, QMenu, QHBoxLayout, QTextEdit, 
-                            QTabWidget, QStackedLayout, QFrame, QToolButton, QSplitter, QStyleFactory)
+                            QTabWidget, QStackedLayout, QFrame, QToolButton, QSplitter, QStyleFactory, QMessageBox)
 from menu_functions import *
-from dialogs import Compile_Dialog, Add_Account_Dialog, Add_Node_Dialog, Deploy_Dialog, IPFS_Token_Dialog, Functions_Layout, Project_Widget, Left_Widget, Test_Dialog
+from dialogs import (Compile_Dialog, Add_Account_Dialog, Add_Node_Dialog, Deploy_Dialog, IPFS_Token_Dialog, Functions_Layout, 
+                    Project_Widget, Left_Widget, Test_Dialog, Create_Project_Dialog)
 from account import Account, add_local_accounts
 from network import Network, init_ganache
 from ipfs import IPFS
@@ -39,6 +40,7 @@ class MainWindow(QMainWindow):
         self.buttons_widget.function_button.clicked.connect(self.function_button_clicked)
 
         main_layout = QHBoxLayout()
+        main_layout.setContentsMargins(0,0,0,0)
 
         self.hsplit = QSplitter(Qt.Orientation.Horizontal)
 
@@ -57,7 +59,6 @@ class MainWindow(QMainWindow):
         editor_split.addWidget(self.output)
         editor_split.setSizes([self.height() - 200, 200])
 
-
         self.hsplit.addWidget(stacked_widget)
         self.hsplit.addWidget(editor_split)
         self.hsplit.setSizes([150, self.width() - 150])
@@ -65,16 +66,10 @@ class MainWindow(QMainWindow):
         main_layout.addWidget(self.buttons_widget, 10)
         main_layout.addWidget(self.hsplit, 90)
 
-        print(QStyleFactory.keys())
-
-        #QApplication.setStyle('Fusion')
-
         container = QWidget()
         container.setLayout(main_layout)
 
         self.setCentralWidget(container)
-
-        print("Time to load: ", time.time() - start_time)
     
     def add_to_output(self, text):
         self.output.append(text)
@@ -100,15 +95,22 @@ class MainWindow(QMainWindow):
 
     def init_project(self):
         project = self.project
-        path = QFileDialog.getExistingDirectory(self, "Select Directory")
-        if path != "":
+        dlg = Create_Project_Dialog()
+
+        if dlg.exec():
             try:
+                project_name = dlg.project_name.text()
+                project_path = dlg.project_path.text()
+                path = os.path.join(project_path, project_name)
+                os.mkdir(path)
+                
                 project.path = path
                 project.init_project()
 
                 self.project_widget.add_tree_view(path)
                             
                 init_ganache(self)
+                time.sleep(3)
                 add_local_accounts(self)
                 self.functions_widget.update_networks()
 
@@ -128,9 +130,9 @@ class MainWindow(QMainWindow):
                 self.project_widget.add_tree_view(path)
                 
                 init_ganache(self)
-                add_local_accounts(self)
-                
                 self.load_data()
+                add_local_accounts(self)
+
                 self.functions_widget.update_networks()
 
                 #self.output.append(f"Project found at {path}\n")
@@ -140,8 +142,15 @@ class MainWindow(QMainWindow):
 
     def delete_project(self):
         path = QFileDialog.getExistingDirectory(self, "Select Directory")
-        project = Project(path)
-        project.delete_project()
+
+        if path != "":
+            project = Project(path)
+            delete_bool = project.delete_project()
+
+            if delete_bool:
+                self.statusBar().showMessage(f"Project successfully deleted!", 2000)
+            else:
+                self.statusBar().showMessage(f"Unable to delete project", 2000)
 
     def is_binary(self, path):
         with open(path, 'rb') as f:
@@ -169,7 +178,7 @@ class MainWindow(QMainWindow):
 
     def save_as(self):
         editor = self.editor_tab.currentWidget()
-        path, _ = QFileDialog.getSaveFileName(self, "Open File", self.project.path, "All files (*)")
+        path, _ = QFileDialog.getSaveFileName(self, "Save File", self.project.path, "All files (*)")
 
         if path != "":
             path = Path(path)
@@ -182,8 +191,23 @@ class MainWindow(QMainWindow):
     def close_file(self):
         index = self.editor_tab.currentIndex()
 
+
         if self.editor_tab.currentWidget().text() != "" or self.editor_tab.currentWidget().file_path != "":
-            self.save()
+            if self.editor_tab.currentWidget().file_path != "":
+                with open(self.editor_tab.currentWidget().file_path, "r") as file:
+                    content = file.read()
+
+                if content != self.editor_tab.currentWidget().text():
+                    reply = QMessageBox.question(self, "Warning", "Do you want to save the changes you made to the file?", QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No | QMessageBox.StandardButton.Cancel)
+                    
+                    if reply == QMessageBox.StandardButton.Yes:
+                        self.save()
+                    elif reply == QMessageBox.StandardButton.No:
+                        pass
+                    else:
+                        return
+            else:
+                self.save()
 
         self.editor_tab.removeTab(index)
 
@@ -224,6 +248,7 @@ class MainWindow(QMainWindow):
             self.accounts = data["accounts"]
             self.networks = data["networks"]
             self.contracts = data["contracts"]
+
         except Exception:
             pass
 
