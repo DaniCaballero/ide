@@ -9,14 +9,15 @@ class CollapsibleBox(QtWidgets.QWidget):
             text=title, checkable=True, checked=False
         )
 
-        self.setStyleSheet("""QPushButton {border-radius: 4px; background-color: #5b8cb9; color: white; font-weight: bold; padding: 5px 2px}
-                            QPushButton::hover {background-color: #517da6} QLineEdit {border-radius: 4px; padding: 5px 2px}""")
+        self.setStyleSheet("""QPushButton {border-radius: 4px; background-color: #f7b143; color: white; font-weight: bold; padding: 5px 2px}
+                            QPushButton::hover {background-color: #3f5c73} QLineEdit {border-radius: 4px; padding: 5px 2px}""")
 
-        self.toggle_button.setStyleSheet("QToolButton { border: none; background-color: white; padding: 5px}")
+        self.toggle_button.setStyleSheet("QToolButton { border: none; background-color: #3f5c73; padding: 5px; color: white; font-weight: bold}")
         self.toggle_button.setToolButtonStyle(
             QtCore.Qt.ToolButtonStyle.ToolButtonTextBesideIcon
         )
-        self.toggle_button.setArrowType(QtCore.Qt.ArrowType.RightArrow)
+        #self.toggle_button.setArrowType(QtCore.Qt.ArrowType.RightArrow)
+        self.toggle_button.setIcon(QtGui.QIcon("./right-arrow-white.png"))
         self.toggle_button.pressed.connect(self.on_pressed)
         self.toggle_button.setSizePolicy(QtWidgets.QSizePolicy.Policy.Expanding, QtWidgets.QSizePolicy.Policy.Fixed)
 
@@ -29,6 +30,8 @@ class CollapsibleBox(QtWidgets.QWidget):
             QtWidgets.QSizePolicy.Policy.Expanding, QtWidgets.QSizePolicy.Policy.Fixed
         )
         self.content_area.setFrameShape(QtWidgets.QFrame.Shape.NoFrame)
+        self.content_area.setObjectName("content_area")
+        self.content_area.setStyleSheet("#content_area {background-color: #cedae4}")
 
         lay = QtWidgets.QVBoxLayout(self)
         lay.setSpacing(0)
@@ -49,9 +52,16 @@ class CollapsibleBox(QtWidgets.QWidget):
     @QtCore.pyqtSlot()
     def on_pressed(self):
         checked = self.toggle_button.isChecked()
-        self.toggle_button.setArrowType(
-            QtCore.Qt.ArrowType.DownArrow if not checked else QtCore.Qt.ArrowType.RightArrow
+        # self.toggle_button.setArrowType(
+        #     QtCore.Qt.ArrowType.DownArrow if not checked else QtCore.Qt.ArrowType.RightArrow
+        # )
+
+        self.toggle_button.setIcon(
+            QtGui.QIcon("./down-arrow-white.png") if not checked else QtGui.QIcon("./right-arrow-white.png")
         )
+
+        #self.toggle_button.setIcon()
+
         self.toggle_animation.setDirection(
             QtCore.QAbstractAnimation.Direction.Forward
             if not checked

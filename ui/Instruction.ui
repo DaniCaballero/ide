@@ -224,7 +224,14 @@ background-color: #f2f5ff;</string>
            </font>
           </property>
           <property name="styleSheet">
-           <string notr="true">border: none; padding: 5px; background-color: #5b8cb9; color: white;</string>
+           <string notr="true">#select_arguments {
+border: none; padding: 5px; background-color: #5b8cb9; color: white;
+}
+
+#select_arguments::hover {
+background-color: #517da6;
+}
+</string>
           </property>
           <property name="text">
            <string>Select Arguments</string>

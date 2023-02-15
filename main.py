@@ -9,7 +9,7 @@ from network import Network, init_ganache
 from ipfs import IPFS
 from interact import contract_interaction
 from project import Editor, Project
-from PyQt6.QtGui import QAction, QColor, QPalette, QIcon
+from PyQt6.QtGui import QAction, QColor, QPalette, QIcon, QFont, QFontDatabase
 import os, signal, psutil, sys, pickle, time
 
 class MainWindow(QMainWindow):
@@ -23,7 +23,19 @@ class MainWindow(QMainWindow):
         self.accounts = {}
         self.contracts = {}
         self.ipfs = ""
-        editor = Editor()
+
+        #self.setObjectName("mainWindow")
+
+        #self.setStyleSheet("#mainWindow {background-color: #3f5c73;}")
+        
+
+        font_id = QFontDatabase.addApplicationFont("RobotoMono.ttf")
+        self.font_families = QFontDatabase.applicationFontFamilies(font_id)
+
+        editor = Editor(font_families=self.font_families)
+
+        print("FONT ID: ", font_id)
+
         self.output = QTextEdit()
         self.output.setMaximumHeight(400)
         self.output.setFrameStyle(0)
@@ -41,6 +53,7 @@ class MainWindow(QMainWindow):
 
         main_layout = QHBoxLayout()
         main_layout.setContentsMargins(0,0,0,0)
+        main_layout.setSpacing(0)
 
         self.hsplit = QSplitter(Qt.Orientation.Horizontal)
 
@@ -62,6 +75,7 @@ class MainWindow(QMainWindow):
         self.hsplit.addWidget(stacked_widget)
         self.hsplit.addWidget(editor_split)
         self.hsplit.setSizes([150, self.width() - 150])
+        self.hsplit.setHandleWidth(1)
 
         main_layout.addWidget(self.buttons_widget, 10)
         main_layout.addWidget(self.hsplit, 90)
@@ -94,7 +108,6 @@ class MainWindow(QMainWindow):
         self.stacked_layout.setCurrentIndex(1)
 
     def init_project(self):
-        project = self.project
         dlg = Create_Project_Dialog()
 
         if dlg.exec():
@@ -104,8 +117,8 @@ class MainWindow(QMainWindow):
                 path = os.path.join(project_path, project_name)
                 os.mkdir(path)
                 
-                project.path = path
-                project.init_project()
+                self.project.path = path
+                self.project.init_project()
 
                 self.project_widget.add_tree_view(path)
                             
@@ -120,13 +133,16 @@ class MainWindow(QMainWindow):
                 self.statusBar().showMessage(f"Unable to initialize project at {path}", 2500)
 
     def open_project(self):
-        project = self.project
+        if self.project.path != "":
+            self.save_data()
+            self.project = Project()
+            
         path = QFileDialog.getExistingDirectory(self, "Select Directory")
-        is_project = project.exists_project(path)
+        is_project = self.project.exists_project(path)
+
         if is_project:
             try:
-                project.path = path
-                
+                self.project.path = path
                 self.project_widget.add_tree_view(path)
                 
                 init_ganache(self)
@@ -157,7 +173,7 @@ class MainWindow(QMainWindow):
             return b'\0' in f.read(1024)
 
     def new_file(self):
-        editor = Editor()
+        editor = Editor(self.font_families)
         self.editor_tab.addTab(editor, editor.file_name)
 
     def open_file(self): 
@@ -173,7 +189,7 @@ class MainWindow(QMainWindow):
         if path == "":
             self.save_as()
         else:
-            path.write_text(editor.text())
+            path.write_text(editor.text().replace("\r\n", "\n"))
             self.statusBar().showMessage(f"Saved file at {path}", 2000)
 
     def save_as(self):
@@ -182,7 +198,7 @@ class MainWindow(QMainWindow):
 
         if path != "":
             path = Path(path)
-            path.write_text(editor.text())
+            path.write_text(editor.text().replace("\r\n", "\n"))
             editor.file_path = path
             editor.change_name(path.name)
             self.editor_tab.setTabText(self.editor_tab.currentIndex(),editor.file_name)
@@ -197,7 +213,7 @@ class MainWindow(QMainWindow):
                 with open(self.editor_tab.currentWidget().file_path, "r") as file:
                     content = file.read()
 
-                if content != self.editor_tab.currentWidget().text():
+                if content != self.editor_tab.currentWidget().text().replace("\r\n", "\n"):
                     reply = QMessageBox.question(self, "Warning", "Do you want to save the changes you made to the file?", QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No | QMessageBox.StandardButton.Cancel)
                     
                     if reply == QMessageBox.StandardButton.Yes:
@@ -224,7 +240,7 @@ class MainWindow(QMainWindow):
                 self.editor_tab.setCurrentIndex(i)
                 return
 
-        editor = Editor()
+        editor = Editor(font_families=self.font_families)
         editor.setText(path.read_text())
         editor.file_path = path
         editor.change_name(path.name)

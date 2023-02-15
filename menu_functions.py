@@ -173,6 +173,7 @@ def deploy_contract(state):
             contract = state.contracts[contract_name][version]
             contract_arg_types = contract.get_constructor()
             constructor_args = find_replace_split(dlg.constructor_args.text())
+            
             network_name = dlg.get_network()
             network = state.networks[network_name]
             account_name = dlg.get_account()

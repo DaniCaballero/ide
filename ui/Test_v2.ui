@@ -23,7 +23,11 @@
    <bool>false</bool>
   </property>
   <property name="styleSheet">
-   <string notr="true">background-color: white;</string>
+   <string notr="true">background-color: white;
+
+
+
+</string>
   </property>
   <layout class="QHBoxLayout" name="horizontalLayout_5">
    <item>
@@ -116,6 +120,10 @@ background-color: white;
 border: 1px solid #5b8cb9;
 
 padding: 5px 10px;
+}
+
+#create_accounts_btn::hover {
+background-color: #f2f5ff;
 }</string>
             </property>
             <property name="text">
@@ -317,8 +325,14 @@ background-color: grey;
         <item>
          <widget class="QPushButton" name="create_test_btn">
           <property name="styleSheet">
-           <string notr="true">border: 1px solid #5b8cb9;
-padding: 5px 15px;</string>
+           <string notr="true">#create_test_btn {
+border: 1px solid #5b8cb9;
+padding: 5px 15px;
+}
+
+#create_test_btn::hover {
+background-color: #f2f5ff;
+}</string>
           </property>
           <property name="text">
            <string>Create</string>
@@ -328,8 +342,14 @@ padding: 5px 15px;</string>
         <item>
          <widget class="QPushButton" name="cancel_btn">
           <property name="styleSheet">
-           <string notr="true">border: 1px solid #5b8cb9;
-padding: 5px 15px;</string>
+           <string notr="true">#cancel_btn {
+border: 1px solid #5b8cb9;
+padding: 5px 15px;
+}
+
+#cancel_btn::hover {
+background-color: #f2f5ff;
+}</string>
           </property>
           <property name="text">
            <string>Cancel</string>

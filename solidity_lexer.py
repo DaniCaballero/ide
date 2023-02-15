@@ -9,7 +9,6 @@ class CustomSolidityLexer(QsciLexerCustom):
         # default text settings
         self.setDefaultColor(QColor("#ff000000"))
         self.setDefaultPaper(QColor("#ffffffff"))
-        self.setDefaultFont(QFont("Consolas", 12))
 
         # define custom styles
         self._define_styles([QColor("#ff000000"),QColor("#ff7f0000"), QColor("#ff0000bf"), QColor("#ff007f00")])
@@ -29,7 +28,7 @@ class CustomSolidityLexer(QsciLexerCustom):
         for i, color in enumerate(color_list):
             self.setColor(color, i)
             self.setPaper(QColor("#ffffffff"), i)
-            self.setFont(QFont("Consolas", 12, weight=QFont.Weight.Normal), i)
+            self.setFont(self.parent().window_font)
 
     def language(self):
         return "Solidity"

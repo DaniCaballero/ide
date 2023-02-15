@@ -49,20 +49,8 @@ class Project:
         
         return True
 
-class State:
-    def __init__(self, project, editor, output):
-        self.project = project
-        self.editor_list = [editor]
-        self.current_editor = editor
-        self.output = output
-        self.contracts = {}
-        self.accounts = {}   
-
-    def load_project_info(self):
-        pass
-
 class Editor(QsciScintilla):
-    def __init__(self, file_path=""):
+    def __init__(self, file_path="", font_families=None):
         super().__init__()
         self.file_path = file_path
         self.file_name = "Untitled"
@@ -74,8 +62,12 @@ class Editor(QsciScintilla):
         self.setBraceMatching(QsciScintilla.BraceMatch.SloppyBraceMatch)
 
         # font
-        self.window_font = QFont("Consolas", pointSize=12)
-        self.setFont(self.window_font)
+        # self.window_font = QFont("Consolas", pointSize=12, weight=1)
+        # self.setFont(self.window_font)
+        if font_families != None:
+            self.window_font = QFont(font_families[0], 12, weight=300)
+            self.window_font.setHintingPreference(QFont.HintingPreference.PreferNoHinting)
+            self.setFont(self.window_font)
     
         # indentation
         self.setIndentationGuides(True)
@@ -83,11 +75,9 @@ class Editor(QsciScintilla):
         self.setIndentationsUseTabs(True) #chequear si prefiero en false o true. Cual es mas comun?
         self.setAutoIndent(True)
 
-        # try python lexer
-        #self.pylexer = QsciLexerPython()
-        #self.pylexer.setDefaultFont(self.window_font)
-
-        #self.api = QsciAPIs(self.pylexer)
+        # EOL
+        self.setEolMode(QsciScintilla.EolMode.EolWindows)
+        self.setEolVisibility(False)
 
         # autocomplete
         self.setAutoCompletionSource(QsciScintilla.AutoCompletionSource.AcsAll)
@@ -95,15 +85,14 @@ class Editor(QsciScintilla):
         self.setAutoCompletionCaseSensitivity(False)
         self.setAutoCompletionUseSingle(QsciScintilla.AutoCompletionUseSingle.AcusNever)
 
-        #self.setLexer(self.pylexer)
-
         # line numbers
         self.setMarginType( 0, QsciScintilla.MarginType.NumberMargin)
         self.setMarginWidth(0, "000")
-        self.setMarginsForegroundColor(QColor("#616161"))
-        self.setMarginsBackgroundColor(QColor("#ededed"))
+        self.setMarginsForegroundColor(QColor("#3f5c73"))
+        self.setMarginsBackgroundColor(QColor("#ffffff"))
 
-        #self.insert_py_keywords()
+        #self.SendScintilla(self.SCI_SETHSCROLLBAR,0)
+        self.SendScintilla(self.SCI_SETSCROLLWIDTH, 500) #Revisar cuantos pixeles poner aqui
 
 
     def insert_py_keywords(self):

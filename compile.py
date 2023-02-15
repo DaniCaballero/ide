@@ -1,4 +1,4 @@
-from solcx import compile_standard, install_solc, get_installed_solc_versions, get_installable_solc_versions
+from solcx import compile_files, install_solc, get_installed_solc_versions, get_installable_solc_versions
 from packaging.version import Version
 from contract import Contract
 from pathlib import Path
@@ -123,22 +123,17 @@ def write_json(contract_tuple, state):
 
 def compile_contract(state, version, file_name, overwrite):
     contracts_folder_path = os.path.join(state.project.path, "contracts")
-
-    sol_args = {
-        "language" : "Solidity",
-        "sources" : {file_name: {'urls': [os.path.join(".", file_name)]}},
-        "settings" : {
-            "outputSelection" : {
-                "*" : {"*" : ["abi", "metadata", "evm.bytecode", "evm.sourceMap"]}
-            }
-        },      
-    }
     
-    compiled_sol = compile_standard(sol_args, solc_version=version, base_path=contracts_folder_path, allow_paths=".")
+    compiled_sol = compile_files(
+        source_files=[os.path.join(contracts_folder_path, file_name)], 
+        solc_version=version,
+        output_values=["abi", "bin"], 
+        allow_paths=contracts_folder_path)
 
-    for contract_name in compiled_sol["contracts"][file_name].keys():
-        bytecode = compiled_sol["contracts"][file_name][contract_name]["evm"]["bytecode"]["object"]
-        abi = compiled_sol["contracts"][file_name][contract_name]["abi"]
+    for contract in compiled_sol.keys():
+        contract_name = contract.split(":")[1]
+        bytecode = compiled_sol[contract]["bin"]
+        abi = compiled_sol[contract]["abi"]
         contract = Contract(contract_name, abi, bytecode)
 
         try:
@@ -174,10 +169,8 @@ def compile(compile_all, state, file_name, overwrite):
         state.output.append(f"{file_name} contract successfully compiled\n")
 
     except Exception as e:
-        try:
-            state.output.append(f"{e.message}\n")
-        except:
-            state.output.append(f"{e}\n")
+        state.output.append(f"{e}\n")
         return
+
 
 

@@ -245,13 +245,17 @@ class Left_Widget(QFrame):
         self.layout = QVBoxLayout()
         self.layout.setAlignment(Qt.AlignmentFlag.AlignTop)
         self.project_button = QToolButton(self)
+
+        self.setStyleSheet("background-color: #3f5c73;")
         
-        self.project_button.setIcon(QIcon("./file-and-folder.png"))
+        self.project_button.setIcon(QIcon("./file-and-folder-white.png"))
         self.project_button.setIconSize(QSize(30,30))
+        self.project_button.setStyleSheet("border: none;")
         
         self.function_button = QToolButton(self)
-        self.function_button.setIcon(QIcon("./smart-contracts.png"))
+        self.function_button.setIcon(QIcon("./smart-contracts-white.png"))
         self.function_button.setIconSize(QSize(30,30))
+        self.function_button.setStyleSheet("border: none;")
 
         self.layout.addWidget(self.project_button)
         self.layout.addWidget(self.function_button)
@@ -267,7 +271,7 @@ class Functions_Layout(QWidget):
         self.app = parent
         self.setAutoFillBackground(True)
         palette = self.palette()
-        palette.setColor(QPalette.ColorRole.Window, QColor("#e8e8e8"))
+        palette.setColor(QPalette.ColorRole.Window, QColor("#ebf0f4"))
         self.setPalette(palette)
 
         select_network_layout = QHBoxLayout()
@@ -299,6 +303,7 @@ class Functions_Layout(QWidget):
         self.layout.addLayout(select_network_layout)
         self.layout.addLayout(select_layout)
         self.layout.addWidget(self.msg_value)
+        self.layout.addSpacing(70)
         self.layout.setContentsMargins(5,5,5,10)
         self.setLayout(self.layout)
 
@@ -365,13 +370,14 @@ class Project_Widget(QWidget):
         self.parent = parent 
         self.setAutoFillBackground(True)
         palette = self.palette()
-        palette.setColor(QPalette.ColorRole.Window, QColor("#e8e8e8"))
+        palette.setColor(QPalette.ColorRole.Window, QColor("#ebf0f4"))
         self.setContentsMargins(0,0,0,0)
         self.setPalette(palette)
 
         self.layout = QVBoxLayout()
         self.layout.setContentsMargins(0,0,0,0)
         layout_label = QLabel("PROJECT FOLDERS")
+        layout_label.setStyleSheet("background-color: #3f5c73; color: white; padding: 5px 0; font-weight: bold;")
         layout_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.layout.addWidget(layout_label)
         self.layout.setAlignment(Qt.AlignmentFlag.AlignTop)
@@ -389,7 +395,7 @@ class Project_Widget(QWidget):
         self.tree_view.setSelectionMode(QTreeView.SelectionMode.SingleSelection)
         self.tree_view.setSelectionBehavior(QTreeView.SelectionBehavior.SelectRows)
         self.tree_view.setEditTriggers(QTreeView.EditTrigger.NoEditTriggers)
-        self.tree_view.setStyleSheet("background-color : #e8e8e8;"
+        self.tree_view.setStyleSheet("background-color : #ebf0f4;"
                                     "border-style: none;")
 
         self.tree_view.setIndentation(10)

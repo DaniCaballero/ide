@@ -2,6 +2,8 @@ import web3
 import re
 
 def get_substrings(string):
+    '''This function extracts susbtrings that are lists and assigns them a placeholder text
+    so they can be subsituted in a string and then reassigned back after a split by ',' is done'''
     substrings, sublist = [], []
     bracket_count = 0
 
@@ -21,6 +23,12 @@ def get_substrings(string):
     return {f"placeholder{i}" : sublist for i, sublist in enumerate(substrings)}
 
 def find_replace_split(string):
+    '''This function is used for splitting the argument string by ',' ensuring
+    that a list's content is not splitted as well.'''
+
+    if string == "":
+        return []
+
     sublist_dict = get_substrings(string)
 
     for key, sublist in sublist_dict.items():
@@ -40,6 +48,8 @@ def find_replace_split(string):
 TYPE_CAST = {"uint" : web3.Web3.toInt, "bytes" : web3.Web3.toBytes, "address" : web3.Web3.toChecksumAddress}
 
 def cast_web3_helper(arg_type, args, list_bool, temp):
+    '''This function extracts base argument type and converts the arguments to their appropiate solidity type.
+    In case an argument is a list, all of its elements are converted. '''
     arg_type_tmp = re.sub('\d', '', arg_type)
 
     if arg_type_tmp in TYPE_CAST.keys():
@@ -59,6 +69,8 @@ def cast_web3_helper(arg_type, args, list_bool, temp):
         temp.append(args)
 
 def cast_web3_types(type_list, args_list):
+    '''This function splits argument type in case is a list and splits its respective
+    argument list by ',' so all elements can be converted to the corresponding type'''
     temp = []
     print("TYPES:", type_list, args_list)
 
@@ -138,8 +150,9 @@ class Contract:
 
         if function_name == "constructor":
             constructor = self.get_constructor()
-            visibility = constructor["stateMutability"]
-            input_types = [input["type"] for input in constructor["inputs"]]
+            if constructor != []:
+                visibility = constructor["stateMutability"]
+                input_types = [input["type"] for input in constructor["inputs"]]
         else:
             for function in self.get_functions():
                 if function["name"] == function_name:
