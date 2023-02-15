@@ -26,7 +26,11 @@ class MainWindow(QMainWindow):
 
         #self.setObjectName("mainWindow")
 
-        #self.setStyleSheet("#mainWindow {background-color: #3f5c73;}")
+        self.setStyleSheet("""QComboBox,QLineEdit,QDoubleSpinBox {border: 1px solid #ced4da; border-radius: 4px;padding: 5px 10px;background-color: white} 
+                            QComboBox::drop-down {border: none} QComboBox::down-arrow {image: url(./down.png); width: 12px; height: 12px; 
+                            margin-right: 15px} QDoubleSpinBox::down-button {border-radius: 4px} QDoubleSpinBox::up-button {border-radius: 4px}
+                            QDoubleSpinBox::down-arrow {image: url(./down.png); width: 12px; height: 12px; margin-right: 15px}
+                            QDoubleSpinBox::up-arrow {image: url(./up-arrow.png); width: 12px; height: 12px; margin-right: 15px}""")
         
 
         font_id = QFontDatabase.addApplicationFont("RobotoMono.ttf")

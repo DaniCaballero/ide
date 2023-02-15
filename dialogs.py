@@ -1,15 +1,17 @@
 from PyQt6.QtWidgets import (QDialog, QDialogButtonBox, QVBoxLayout, QLabel, QComboBox, QLineEdit, QWidget,
                              QHBoxLayout, QFrame, QToolButton, QPushButton, QTreeView, QSizePolicy, QFileDialog, 
-                             QErrorMessage, QGraphicsDropShadowEffect, QCheckBox)
+                             QErrorMessage, QGraphicsDropShadowEffect, QCheckBox, QDoubleSpinBox)
 from PyQt6.QtGui import QPalette, QColor, QIcon, QFileSystemModel, QRgba64
 from PyQt6.QtCore import QSize, Qt, QDir, pyqtSignal, QThread
 from PyQt6 import uic
-import os, threading
+import os, threading, decimal
 from pathlib import Path
 from collapsible import CollapsibleBox
 from contract import find_replace_split
 from project import Editor, Select_Accounts_Model
 from test import Sequence, Random, File, Test, Instruction, Worker
+from web3 import Web3
+
 
 def get_button_box(dialog_obj):
     QBtn = QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel
@@ -274,6 +276,10 @@ class Functions_Layout(QWidget):
         palette.setColor(QPalette.ColorRole.Window, QColor("#ebf0f4"))
         self.setPalette(palette)
 
+        layout_label = QLabel("CONTRACT FUNCTIONS")
+        layout_label.setStyleSheet("background-color: #3f5c73; color: white; padding: 5px 0; font-weight: bold;")
+        layout_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+
         select_network_layout = QHBoxLayout()
         select_network_label = QLabel("Network:")
         self.select_network = QComboBox(self)
@@ -281,6 +287,7 @@ class Functions_Layout(QWidget):
         #add_widgets_to_layout(select_layout, [select_account_label, self.select_account])
         select_network_layout.addWidget(select_network_label, 30)
         select_network_layout.addWidget(self.select_network, 70)
+        select_network_layout.setContentsMargins(10,0,10,0)
         self.select_network.currentIndexChanged.connect(self.update_accounts)
 
         select_layout = QHBoxLayout()
@@ -290,21 +297,29 @@ class Functions_Layout(QWidget):
         #add_widgets_to_layout(select_layout, [select_account_label, self.select_account])
         select_layout.addWidget(select_account_label, 30)
         select_layout.addWidget(self.select_account, 70)
+        select_layout.setContentsMargins(10,0,10,0)
 
-        #msg_layout = QHBoxLayout()
+        ether_layout = QHBoxLayout()
         #msg_value_label = QLabel("Send ether:")
-        self.msg_value = QLineEdit(self)
-        self.msg_value.setPlaceholderText("ether amount")
+        self.msg_value = QDoubleSpinBox()
+        #self.msg_value.setPlaceholderText("ether amount")
+        self.select_wei = QComboBox()
+        self.select_wei.addItems(["wei", "gwei", "ether"])
+        ether_layout.addWidget(self.msg_value, 70)
+        ether_layout.addWidget(self.select_wei, 30)
+        ether_layout.setContentsMargins(10,0,10,0)
         #add_widgets_to_layout(msg_layout, [msg_value_label, self.msg_value])
 
         self.layout = QVBoxLayout()
         self.layout.setAlignment(Qt.AlignmentFlag.AlignTop)
         #add_widgets_to_layout(self.layout, [self.select_account, self.msg_value])
+        self.layout.addWidget(layout_label)
+        self.layout.addSpacing(15)
         self.layout.addLayout(select_network_layout)
         self.layout.addLayout(select_layout)
-        self.layout.addWidget(self.msg_value)
+        self.layout.addLayout(ether_layout)
         self.layout.addSpacing(70)
-        self.layout.setContentsMargins(5,5,5,10)
+        self.layout.setContentsMargins(0,0,0,0)
         self.setLayout(self.layout)
 
     def update_networks(self):
@@ -352,6 +367,9 @@ class Functions_Layout(QWidget):
         network_name = self.select_network.currentText()
         network = self.app.networks[network_name]
         w3 = network.connect_to_node()
+        msg_value = self.msg_value.value() 
+        wei = self.select_wei.currentText()
+        msg_value = Web3.toWei(decimal.Decimal(msg_value), wei)
 
         if network_name == "local":
             account = self.app.accounts["local"][self.select_account.currentText()]
@@ -359,7 +377,7 @@ class Functions_Layout(QWidget):
             account = self.app.accounts["persistent"][self.select_account.currentText()]
 
         #threading.Thread(target=contract_interaction, args=(network, w3, account,*args,)).start()
-        _, result = contract.contract_interaction(network, w3, account, *args)
+        _, result = contract.contract_interaction(network, w3, account, *args, msg_value)
 
         self.function_signal.emit(str(result))
 
