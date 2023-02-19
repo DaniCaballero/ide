@@ -134,7 +134,7 @@ def compile_contract(state, version, file_name, overwrite):
         contract_name = contract.split(":")[1]
         bytecode = compiled_sol[contract]["bin"]
         abi = compiled_sol[contract]["abi"]
-        contract = Contract(contract_name, abi, bytecode)
+        contract = Contract(f"{contract_name}-{file_name}", abi, bytecode)
 
         try:
             if overwrite:

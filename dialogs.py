@@ -1,10 +1,10 @@
 from PyQt6.QtWidgets import (QDialog, QDialogButtonBox, QVBoxLayout, QLabel, QComboBox, QLineEdit, QWidget,
                              QHBoxLayout, QFrame, QToolButton, QPushButton, QTreeView, QSizePolicy, QFileDialog, 
-                             QErrorMessage, QGraphicsDropShadowEffect, QCheckBox, QDoubleSpinBox)
-from PyQt6.QtGui import QPalette, QColor, QIcon, QFileSystemModel, QRgba64
+                             QErrorMessage, QGraphicsDropShadowEffect, QCheckBox, QDoubleSpinBox, QMenu)
+from PyQt6.QtGui import QPalette, QColor, QIcon, QFileSystemModel, QRgba64, QDragEnterEvent, QDragLeaveEvent
 from PyQt6.QtCore import QSize, Qt, QDir, pyqtSignal, QThread
-from PyQt6 import uic
-import os, threading, decimal
+from PyQt6 import uic, QtWidgets
+import os, threading, decimal, shutil
 from pathlib import Path
 from collapsible import CollapsibleBox
 from contract import find_replace_split
@@ -426,13 +426,13 @@ class Project_Widget(QWidget):
         for i in range(1, self.tree_view.model().columnCount()):
             self.tree_view.setColumnHidden(i, True)
         
-
         self.layout.addWidget(self.tree_view)
     
     def tree_view_clicked(self, index):
         path = self.model.filePath(index)
         p = Path(path)
         self.parent.add_new_tab(p)
+
 
 class IPFS_Token_Dialog(QDialog):
     def __init__(self, parent=None):
@@ -483,16 +483,16 @@ class Test_Dialog(QDialog):
 
         self.test = Test()
 
-    def add_instruction(self):
+    def add_instruction(self, instruction=None):
         shadow = QGraphicsDropShadowEffect()
         shadow.setBlurRadius(25)
         shadow.setColor(QColor("#ADAAB5"))
         shadow.setOffset(4)
 
-        instruction = Instruction_Widget(self.contracts, self.test.accounts)
-        instruction.setGraphicsEffect(shadow)
+        ui_instruction = Instruction_Widget(self.contracts, self.test.accounts, instruction)
+        ui_instruction.setGraphicsEffect(shadow)
         shadow.setEnabled(True)
-        self.scroll_widget_layout.addWidget(instruction)
+        self.scroll_widget_layout.addWidget(ui_instruction)
 
     def create_accounts(self):
         value = self.accounts_number.value()
@@ -545,13 +545,12 @@ class Test_Dialog(QDialog):
 
         self.thread.start()
 
-            
-
 class Argument_Dialog(QDialog):
-    def __init__(self):
+    def __init__(self, arg = None):
         super().__init__()
         uic.loadUi("./ui/Argument_Dialog.ui", self)
         self.current_toggled = None
+        self.arg = arg
 
         self.max_columns = {"File:" : [0, 2] , "Sequence:" : [1, 4], "Random:" : [2,3]}
 
@@ -573,6 +572,28 @@ class Argument_Dialog(QDialog):
         self.spinBox_5.valueChanged.connect(self.validate_row_3)
         
         self.pushButton.clicked.connect(self.get_path)
+
+        if self.arg != None:
+            self.set_default_values()
+
+    def set_default_values(self):
+        
+        class_name = type(self.arg).__name__
+
+        if class_name == "File":
+            self.radioButton.setChecked(True)
+            self.lineEdit.setText(self.arg.path)
+
+        elif class_name == "Sequence":
+            self.radioButton_2.setChecked(True)
+            self.spinBox.setValue(self.arg.min)
+            self.spinBox_2.setValue(self.arg.max)
+            self.spinBox_3.setValue(self.arg.step)
+
+        elif class_name == "Random":
+            self.radioButton_3.setChecked(True)
+            self.spinBox_4.setValue(self.arg.min)
+            self.spinBox_5.setValue(self.arg.max)
 
     def get_path(self):
         path, _ = QFileDialog.getOpenFileName(self, "Open File", "", "All files (*)")
@@ -642,8 +663,8 @@ class Argument_Dialog(QDialog):
             print("upss")
 
 class Select_Ether_Dialog(Argument_Dialog):
-    def __init__(self):
-        super().__init__()
+    def __init__(self, arg = None):
+        super().__init__(arg)
         
         self.label.setText("Select Ether to send")
 
@@ -657,15 +678,20 @@ class Select_Ether_Dialog(Argument_Dialog):
 
         self.gridLayout.addWidget(self.ether_label, 3, 0)
         self.gridLayout.addWidget(self.select_wei_denomination, 3, 1)
+
+        # Assign default value 
+        if self.arg != None:
+            self.select_wei_denomination.setCurrentText(self.arg.type)
             
 class Instruction_Widget(QWidget):
-    def __init__(self, contracts, accounts):
+    def __init__(self, contracts, accounts, instruction=None):
         super().__init__()
         uic.loadUi("./ui/Instruction.ui", self)
         self.contracts = contracts
         self.arguments = []
         self.argument_list = []
         self.accounts = accounts
+        self.instruction = instruction
         self.instruction_accounts = []
         self.msg_values = None
 
@@ -676,10 +702,26 @@ class Instruction_Widget(QWidget):
         self.delete_btn.clicked.connect(self.delete_widget)
         
         self.select_version.currentIndexChanged.connect(self.set_functions)
-
         self.select_function.currentIndexChanged.connect(self.set_arguments)
-
         self.select_arguments.clicked.connect(self.select_args)
+
+        if instruction != None:
+            pass
+            # set default values and block change
+
+    def set_default_values(self):
+        
+        # set default values for the instruction
+        self.select_contract.setCurrentText(self.instruction.contract.name)
+        self.iterations.setValue(self.instruction.number_of_executions)
+        self.select_version.setCurrentText(self.instruction.version)
+        self.time_interval.setValue(self.instruction.time_interval)
+        self.select_function.setCurrentText(self.instruction.function_name)
+
+        # disable changes to the widgets
+        self.select_contract.setEnabled(False)
+        self.select_version.setEnabled(False)
+        self.select_function.setEnabled(False)        
 
     def delete_widget(self):
         parent_layout = self.parent().layout()
@@ -688,7 +730,7 @@ class Instruction_Widget(QWidget):
         del self
 
     def select_args(self):
-        dlg = List_Arguments_Dialog(self.arguments, self.accounts)
+        dlg = List_Arguments_Dialog(self.arguments, self.accounts, self.instruction)
 
         if dlg.exec():
             if dlg.checkBox.isChecked():
@@ -751,20 +793,20 @@ class Instruction_Widget(QWidget):
 
 
 class Argument_Widget_v2(QWidget):
-    def __init__(self, arg):
+    def __init__(self, arg_info, arg = None):
         super().__init__()
         uic.loadUi("./ui/Argument_Widget_v2.ui", self)
 
-        self.arg = None
-        self.arg_name = arg[0]
-        self.arg_type = arg[1]
+        self.arg = arg
+        self.arg_name = arg_info[0]
+        self.arg_type = arg_info[1]
 
         self.label.setText(self.arg_name)
         self.pushButton.clicked.connect(self.select_args)
 
 
     def select_args(self):
-        dlg = Argument_Dialog()
+        dlg = Argument_Dialog(self.arg)
 
         if dlg.exec():
             self.arg = dlg.get_checked_button_values()
@@ -775,13 +817,14 @@ class Argument_Widget_v2(QWidget):
             print("NOOOO")
 
 class List_Arguments_Dialog(QDialog):
-    def __init__(self, args, accounts):
+    def __init__(self, args, accounts, instruction=None):
         super().__init__()
         uic.loadUi("./ui/List_Arguments_Dialog.ui", self)
 
         self.resize(400,400)
 
         self.accounts = accounts
+        self.instruction = instruction
         self.selected_accounts = []
 
         self.msg_values = Random(0,0, "ether denomination", "wei")
@@ -798,9 +841,14 @@ class List_Arguments_Dialog(QDialog):
         self.add_widgets(args)
 
     def add_widgets(self, args):
-        for arg in args:
-            select_arg_widget = Argument_Widget_v2(arg)
-            #select_arg_widget.pushButton.clicked.connect(self.select_args)
+        select_arg_widget = None
+
+        for index, arg in enumerate(args):
+            if self.instruction != None:
+                select_arg_widget = Argument_Widget_v2(arg, self.instruction.args[index])
+            else:
+                select_arg_widget = Argument_Widget_v2(arg)
+
             self.scroll_widget_layout.addWidget(select_arg_widget)
 
     def check_valid_args(self):
@@ -863,9 +911,30 @@ class Select_Account_Dialog(QDialog):
 
         return indexes
 
+class Edit_Test_Dialog(Test_Dialog):
+    def __init__(self, contracts, project_path, test):
+        super().__init__(contracts, project_path)
 
+        # Assigning test attributes as default values
+        self.test = test
+        self.test_name.setText(self.test.name)
+        self.spinBox.setValue(self.test.number_of_nodes)
+        self.spinBox_2.setValue(self.test.concurrency_number)
+        
+    def add_existing_instructions(self):
 
+        for instruction in self.test.instructions:
+            self.add_instruction(instruction)
 
+class Manage_Test(QDialog):
+    def __init__(self):
+        super().__init__()
+        uic.loadUi("Manage_Test.ui", self)
+
+        # connect signals to change the stacked widget current page
+        self.create_btn.clicked.connect(lambda : self.stackedWidget.setCurrentIndex(0))
+        self.edit_btn.clicked.connect(lambda : self.stackedWidget.setCurrentIndex(1))
+        self.copy_btn.clicked.connect(lambda : self.stackedWidget.setCurrentIndex(2)) 
 
 
 

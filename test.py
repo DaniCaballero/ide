@@ -251,6 +251,11 @@ class Test:
         self.generate_results_csv()
         self.end_geth_processes(pids)
 
+class Rol:
+    def __init__(self, name, idx : list):
+        self. name = name
+        self.idx = idx
+
 class Instruction:
     def __init__(self, contract, function_name, number_of_executions, args, msg_values,time_interval=0,accounts=[], use_csv=False):
         self.contract = contract
