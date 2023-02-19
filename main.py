@@ -3,7 +3,7 @@ from PyQt6.QtWidgets import (QApplication, QWidget, QMainWindow, QLabel, QLineEd
                             QTabWidget, QStackedLayout, QFrame, QToolButton, QSplitter, QStyleFactory, QMessageBox)
 from menu_functions import *
 from dialogs import (Compile_Dialog, Add_Account_Dialog, Add_Node_Dialog, Deploy_Dialog, IPFS_Token_Dialog, Functions_Layout, 
-                    Project_Widget, Left_Widget, Test_Dialog, Create_Project_Dialog)
+                    Project_Widget, Left_Widget, Test_Dialog, Create_Project_Dialog, Manage_Test)
 from account import Account, add_local_accounts
 from network import Network, init_ganache
 from ipfs import IPFS
@@ -252,7 +252,8 @@ class MainWindow(QMainWindow):
         self.editor_tab.setCurrentWidget(editor)
 
     def create_test(self):
-        dlg = Test_Dialog(self.contracts, self.project.path)
+        #dlg = Test_Dialog(self.contracts, self.project.path)
+        dlg = Manage_Test(self.contracts, self.project.path)
 
         if dlg.exec():
             print("YAY")

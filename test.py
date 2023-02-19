@@ -257,8 +257,9 @@ class Rol:
         self.idx = idx
 
 class Instruction:
-    def __init__(self, contract, function_name, number_of_executions, args, msg_values,time_interval=0,accounts=[], use_csv=False):
+    def __init__(self, contract, version, function_name, number_of_executions, args, msg_values,time_interval=0,accounts=[], use_csv=False):
         self.contract = contract
+        self.version = version
         self.function_name = function_name
         self.accounts = accounts
         self.number_of_executions = number_of_executions

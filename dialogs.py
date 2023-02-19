@@ -4,7 +4,7 @@ from PyQt6.QtWidgets import (QDialog, QDialogButtonBox, QVBoxLayout, QLabel, QCo
 from PyQt6.QtGui import QPalette, QColor, QIcon, QFileSystemModel, QRgba64, QDragEnterEvent, QDragLeaveEvent
 from PyQt6.QtCore import QSize, Qt, QDir, pyqtSignal, QThread
 from PyQt6 import uic, QtWidgets
-import os, threading, decimal, shutil
+import os, threading, decimal, shutil, pickle
 from pathlib import Path
 from collapsible import CollapsibleBox
 from contract import find_replace_split
@@ -459,14 +459,17 @@ class IPFS_Token_Dialog(QDialog):
             self.button_box.button(QDialogButtonBox.StandardButton.Ok).setEnabled(False)
 
 class Test_Dialog(QDialog):
-    def __init__(self, contracts, project_path):
+    def __init__(self, ui_name, contracts, project_path, test_name=""):
         super().__init__()
-        uic.loadUi("./ui/Test_v2.ui", self)
+        uic.loadUi(f"./ui/{ui_name}", self)
         self.contracts = contracts
         self.project_path = project_path
         self.instructions = []
 
-        self.add_inst_btn.clicked.connect(self.add_instruction)
+        self.test_name.setText(test_name)
+        self.test_name.setEnabled(False)
+
+        self.add_inst_btn.clicked.connect(lambda : self.add_instruction())
         self.run_test_btn.clicked.connect(self.run_test)
         self.create_accounts_btn.clicked.connect(self.create_accounts)
         self.create_test_btn.clicked.connect(self.create_test)
@@ -481,18 +484,34 @@ class Test_Dialog(QDialog):
 
         self.setStyleSheet(qcombobox)
 
-        self.test = Test()
+        self.test = Test(name=test_name)
 
     def add_instruction(self, instruction=None):
         shadow = QGraphicsDropShadowEffect()
         shadow.setBlurRadius(25)
         shadow.setColor(QColor("#ADAAB5"))
         shadow.setOffset(4)
+        print("instruction ", instruction )
 
         ui_instruction = Instruction_Widget(self.contracts, self.test.accounts, instruction)
         ui_instruction.setGraphicsEffect(shadow)
         shadow.setEnabled(True)
         self.scroll_widget_layout.addWidget(ui_instruction)
+
+    def save_test(self):
+        data_path = os.path.join(self.project_path, "tests", "test_data.pkl")
+        test_data = {}
+
+        try:
+            with open(data_path, "rb") as f:
+                test_data = pickle.load(f)
+        except:
+            pass
+
+        test_data[self.test.name] = self.test
+
+        with open(data_path, "wb") as f:
+            pickle.dump(test_data, f)
 
     def create_accounts(self):
         value = self.accounts_number.value()
@@ -511,20 +530,20 @@ class Test_Dialog(QDialog):
             error_message.showMessage("All instructions must be defined")
             return
         
-        self.test.name = self.test_name.text()
+        #self.test.name = self.test_name.text()
         self.test.number_of_nodes = self.spinBox.value()
         self.test.concurrency_number = self.spinBox_2.value()
         self.test.instructions = self.instructions
         self.test.project_path = self.project_path
 
-        if Path(os.path.join(self.project_path, "tests", self.test.name)).exists():
-            error_message = QErrorMessage(self)
-            error_message.showMessage("There's already a test with the same name")
-            return
+        # if Path(os.path.join(self.project_path, "tests", self.test.name)).exists():
+        #     error_message = QErrorMessage(self)
+        #     error_message.showMessage("There's already a test with the same name")
+        #     return
 
         self.run_test_btn.setEnabled(True)
         
-        print(self.instructions)
+        self.save_test()
     
     def run_test(self):
 
@@ -706,15 +725,16 @@ class Instruction_Widget(QWidget):
         self.select_arguments.clicked.connect(self.select_args)
 
         if instruction != None:
-            pass
+            self.set_default_values()
             # set default values and block change
 
     def set_default_values(self):
         
         # set default values for the instruction
+
         self.select_contract.setCurrentText(self.instruction.contract.name)
         self.iterations.setValue(self.instruction.number_of_executions)
-        self.select_version.setCurrentText(self.instruction.version)
+        self.select_version.setCurrentText(str(self.instruction.version))
         self.time_interval.setValue(self.instruction.time_interval)
         self.select_function.setCurrentText(self.instruction.function_name)
 
@@ -784,12 +804,13 @@ class Instruction_Widget(QWidget):
         self.arguments = [(input["name"], input["type"]) for input in function_dict["inputs"]]
 
     def get_instruction(self):
-        contract = self.contracts[self.select_contract.currentText()][self.select_version.currentIndex()]
+        version = self.select_version.currentIndex()
+        contract = self.contracts[self.select_contract.currentText()][version]
         function_name = self.select_function.currentText()
         exec_n = self.iterations.value()
         time_interval = self.time_interval.value()
 
-        return Instruction(contract, function_name, exec_n, self.argument_list, self.msg_values, time_interval, self.instruction_accounts)
+        return Instruction(contract, version, function_name, exec_n, self.argument_list, self.msg_values, time_interval, self.instruction_accounts)
 
 
 class Argument_Widget_v2(QWidget):
@@ -844,10 +865,10 @@ class List_Arguments_Dialog(QDialog):
         select_arg_widget = None
 
         for index, arg in enumerate(args):
-            if self.instruction != None:
-                select_arg_widget = Argument_Widget_v2(arg, self.instruction.args[index])
-            else:
+            if self.instruction is None:
                 select_arg_widget = Argument_Widget_v2(arg)
+            else:
+                select_arg_widget = Argument_Widget_v2(arg, self.instruction.args[index])
 
             self.scroll_widget_layout.addWidget(select_arg_widget)
 
@@ -913,13 +934,16 @@ class Select_Account_Dialog(QDialog):
 
 class Edit_Test_Dialog(Test_Dialog):
     def __init__(self, contracts, project_path, test):
-        super().__init__(contracts, project_path)
+        super().__init__("Edit_Test.ui",contracts, project_path)
 
         # Assigning test attributes as default values
         self.test = test
         self.test_name.setText(self.test.name)
+        self.test_name.setEnabled(False)
         self.spinBox.setValue(self.test.number_of_nodes)
         self.spinBox_2.setValue(self.test.concurrency_number)
+
+        self.add_existing_instructions()
         
     def add_existing_instructions(self):
 
@@ -927,14 +951,90 @@ class Edit_Test_Dialog(Test_Dialog):
             self.add_instruction(instruction)
 
 class Manage_Test(QDialog):
-    def __init__(self):
+    def __init__(self, contracts, project_path):
         super().__init__()
-        uic.loadUi("Manage_Test.ui", self)
+        uic.loadUi("./ui/Manage_Test.ui", self)
+        self.project_path = project_path
+        self.contracts = contracts
 
         # connect signals to change the stacked widget current page
         self.create_btn.clicked.connect(lambda : self.stackedWidget.setCurrentIndex(0))
+        self.create_btn.clicked.connect(self.enable_disable_btn)
         self.edit_btn.clicked.connect(lambda : self.stackedWidget.setCurrentIndex(1))
-        self.copy_btn.clicked.connect(lambda : self.stackedWidget.setCurrentIndex(2)) 
+        self.edit_btn.clicked.connect(self.enable_disable_btn)
+        self.copy_btn.clicked.connect(lambda : self.stackedWidget.setCurrentIndex(2))
+        self.copy_btn.clicked.connect(self.enable_disable_btn)
+
+        # connect onChange signals to enable disable Ok button
+        self.lineEdit.textChanged.connect(self.enable_disable_btn)
+        self.edit_select.currentTextChanged.connect(self.enable_disable_btn)
+        self.copy_select.currentTextChanged.connect(self.enable_disable_btn)
+
+        # fill select widgets
+        self.test_data = self.load_test_data()
+        self.edit_select.addItems(list(self.test_data.keys()))
+        self.copy_select.addItems(list(self.test_data.keys()))
+
+        self.buttonBox.button(QDialogButtonBox.StandardButton.Ok).setEnabled(False)
+
+    def enable_disable_btn(self):
+        
+        if self.stackedWidget.currentIndex() == 0:
+            if self.lineEdit.text() != "":
+                try:
+                    test = self.test_data[self.lineEdit.text()]
+                    self.buttonBox.button(QDialogButtonBox.StandardButton.Ok).setEnabled(False)
+                except:
+                    self.buttonBox.button(QDialogButtonBox.StandardButton.Ok).setEnabled(True)
+            else:
+                self.buttonBox.button(QDialogButtonBox.StandardButton.Ok).setEnabled(False)
+
+        elif self.stackedWidget.currentIndex() == 1:
+            if self.edit_select.currentText() != "":
+                self.buttonBox.button(QDialogButtonBox.StandardButton.Ok).setEnabled(True)
+            else:
+                self.buttonBox.button(QDialogButtonBox.StandardButton.Ok).setEnabled(False)
+
+        elif self.stackedWidget.currentIndex() == 2:
+            pass
+
+    
+    # next button ?
+    def accept(self) -> None:
+        #return super().accept()
+        dlg = None
+
+        if self.stackedWidget.currentIndex() == 0:
+
+            dlg = Test_Dialog("Test_v2.ui", self.contracts, self.project_path, self.lineEdit.text())
+
+        elif self.stackedWidget.currentIndex() == 1:
+            try:
+                test = self.test_data[self.edit_select.currentText()]
+                dlg = Edit_Test_Dialog(self.contracts, self.project_path, test)
+            except:
+                return # meanwhile
+        elif self.stackedWidget.currentIndex() == 2:
+            pass
+
+        if dlg.exec():
+            print("wii")
+        else:
+            print("woo")
+
+        
+    def load_test_data(self):
+        data_path = os.path.join(self.project_path, "tests", "test_data.pkl")
+        test_data = {}
+
+        try:
+            with open(data_path, "rb") as f:
+                test_data = pickle.load(f)
+        except:
+            pass
+
+        return test_data
+          
 
 
 
