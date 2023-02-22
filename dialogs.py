@@ -1,10 +1,10 @@
 from PyQt6.QtWidgets import (QDialog, QDialogButtonBox, QVBoxLayout, QLabel, QComboBox, QLineEdit, QWidget,
                              QHBoxLayout, QFrame, QToolButton, QPushButton, QTreeView, QSizePolicy, QFileDialog, 
-                             QErrorMessage, QGraphicsDropShadowEffect, QCheckBox, QDoubleSpinBox, QMenu)
+                             QErrorMessage, QGraphicsDropShadowEffect, QCheckBox, QDoubleSpinBox, QMenu, QListView)
 from PyQt6.QtGui import QPalette, QColor, QIcon, QFileSystemModel, QRgba64, QDragEnterEvent, QDragLeaveEvent
-from PyQt6.QtCore import QSize, Qt, QDir, pyqtSignal, QThread
+from PyQt6.QtCore import QSize, Qt, QDir, pyqtSignal, QThread, QItemSelectionModel
 from PyQt6 import uic, QtWidgets
-import os, threading, decimal, shutil, pickle
+import os, threading, decimal, shutil, pickle, copy
 from pathlib import Path
 from collapsible import CollapsibleBox
 from contract import find_replace_split
@@ -459,19 +459,19 @@ class IPFS_Token_Dialog(QDialog):
             self.button_box.button(QDialogButtonBox.StandardButton.Ok).setEnabled(False)
 
 class Test_Dialog(QDialog):
-    def __init__(self, ui_name, contracts, project_path, test_name=""):
+    def __init__(self, ui_name, contracts, project_path, test):
         super().__init__()
         uic.loadUi(f"./ui/{ui_name}", self)
         self.contracts = contracts
         self.project_path = project_path
         self.instructions = []
+        self.test = test
 
-        self.test_name.setText(test_name)
+        self.test_name.setText(self.test.name)
         self.test_name.setEnabled(False)
 
         self.add_inst_btn.clicked.connect(lambda : self.add_instruction())
         self.run_test_btn.clicked.connect(self.run_test)
-        self.create_accounts_btn.clicked.connect(self.create_accounts)
         self.create_test_btn.clicked.connect(self.create_test)
 
         qcombobox = """QComboBox {border: 1px solid #ced4da; border-radius: 4px;padding-left: 10px;background-color: #f2f5ff} QComboBox::drop-down {border: none} QComboBox::down-arrow {image: url(./down.png); width: 12px; height: 12px; margin-right: 15px}
@@ -484,7 +484,7 @@ class Test_Dialog(QDialog):
 
         self.setStyleSheet(qcombobox)
 
-        self.test = Test(name=test_name)
+        #self.test = Test(name=test_name)
 
     def add_instruction(self, instruction=None):
         shadow = QGraphicsDropShadowEffect()
@@ -493,7 +493,7 @@ class Test_Dialog(QDialog):
         shadow.setOffset(4)
         print("instruction ", instruction )
 
-        ui_instruction = Instruction_Widget(self.contracts, self.test.accounts, instruction)
+        ui_instruction = Instruction_Widget(self.contracts, self.test.accounts, self.test.rols, instruction)
         ui_instruction.setGraphicsEffect(shadow)
         shadow.setEnabled(True)
         self.scroll_widget_layout.addWidget(ui_instruction)
@@ -513,14 +513,8 @@ class Test_Dialog(QDialog):
         with open(data_path, "wb") as f:
             pickle.dump(test_data, f)
 
-    def create_accounts(self):
-        value = self.accounts_number.value()
-
-        if value != 0:
-            self.test.create_accounts(value)
-            print(self.test.accounts)
-
     def create_test(self):
+        self.instructions = []
         
         try:
             for i in range(self.scroll_widget_layout.count()):
@@ -528,6 +522,7 @@ class Test_Dialog(QDialog):
         except:
             error_message = QErrorMessage(self)
             error_message.showMessage("All instructions must be defined")
+            self.run_test_btn.setEnabled(False)
             return
         
         #self.test.name = self.test_name.text()
@@ -535,6 +530,24 @@ class Test_Dialog(QDialog):
         self.test.concurrency_number = self.spinBox_2.value()
         self.test.instructions = self.instructions
         self.test.project_path = self.project_path
+
+        try:
+            for instruction in self.test.instructions:
+                instruction.msg_values.generate_data(instruction.number_of_executions)
+                for arg in instruction.args:
+                    arg.generate_data(instruction.number_of_executions)
+        except Exception as e:
+            print(e)
+            error_message = QErrorMessage(self)
+            error_message.showMessage("Failed to initialize arguments")
+            self.run_test_btn.setEnabled(False)
+            return
+
+        try:
+            bool_value = self.use_prev_checkbox.isChecked()
+            self.test.use_prev_chain = bool_value
+        except:
+            pass
 
         # if Path(os.path.join(self.project_path, "tests", self.test.name)).exists():
         #     error_message = QErrorMessage(self)
@@ -703,16 +716,18 @@ class Select_Ether_Dialog(Argument_Dialog):
             self.select_wei_denomination.setCurrentText(self.arg.type)
             
 class Instruction_Widget(QWidget):
-    def __init__(self, contracts, accounts, instruction=None):
+    def __init__(self, contracts, accounts, rols, instruction=None):
         super().__init__()
         uic.loadUi("./ui/Instruction.ui", self)
         self.contracts = contracts
         self.arguments = []
         self.argument_list = []
         self.accounts = accounts
+        self.rols = rols
         self.instruction = instruction
         self.instruction_accounts = []
-        self.msg_values = None
+        self.msg_values = Random(0,0, "ether denomination", "wei")
+        self.is_defined = False
 
         self.select_contract.addItems(self.contracts.keys())
         self.select_contract.currentIndexChanged.connect(self.set_versions)
@@ -731,17 +746,21 @@ class Instruction_Widget(QWidget):
     def set_default_values(self):
         
         # set default values for the instruction
-
         self.select_contract.setCurrentText(self.instruction.contract.name)
         self.iterations.setValue(self.instruction.number_of_executions)
         self.select_version.setCurrentText(str(self.instruction.version))
         self.time_interval.setValue(self.instruction.time_interval)
         self.select_function.setCurrentText(self.instruction.function_name)
+        self.argument_list = self.instruction.args
+        print(self.argument_list)
+        self.instruction_accounts = self.instruction.accounts
 
         # disable changes to the widgets
         self.select_contract.setEnabled(False)
         self.select_version.setEnabled(False)
-        self.select_function.setEnabled(False)        
+        self.select_function.setEnabled(False)
+
+        self.is_defined = True        
 
     def delete_widget(self):
         parent_layout = self.parent().layout()
@@ -750,7 +769,7 @@ class Instruction_Widget(QWidget):
         del self
 
     def select_args(self):
-        dlg = List_Arguments_Dialog(self.arguments, self.accounts, self.instruction)
+        dlg = List_Arguments_Dialog(self.arguments, self.accounts, self.rols, self.instruction)
 
         if dlg.exec():
             if dlg.checkBox.isChecked():
@@ -764,8 +783,9 @@ class Instruction_Widget(QWidget):
 
             print(self.argument_list)
         
-            self.instruction_accounts = [self.accounts[index] for index in dlg.selected_accounts]
+            self.instruction_accounts = [index for index in dlg.selected_accounts]
             self.msg_values = dlg.msg_values
+            self.is_defined = True
         else:
             print("wains")
 
@@ -804,6 +824,9 @@ class Instruction_Widget(QWidget):
         self.arguments = [(input["name"], input["type"]) for input in function_dict["inputs"]]
 
     def get_instruction(self):
+        if self.is_defined == False:
+            raise Exception
+
         version = self.select_version.currentIndex()
         contract = self.contracts[self.select_contract.currentText()][version]
         function_name = self.select_function.currentText()
@@ -811,7 +834,6 @@ class Instruction_Widget(QWidget):
         time_interval = self.time_interval.value()
 
         return Instruction(contract, version, function_name, exec_n, self.argument_list, self.msg_values, time_interval, self.instruction_accounts)
-
 
 class Argument_Widget_v2(QWidget):
     def __init__(self, arg_info, arg = None):
@@ -838,15 +860,20 @@ class Argument_Widget_v2(QWidget):
             print("NOOOO")
 
 class List_Arguments_Dialog(QDialog):
-    def __init__(self, args, accounts, instruction=None):
+    def __init__(self, args, accounts, rols, instruction=None):
         super().__init__()
         uic.loadUi("./ui/List_Arguments_Dialog.ui", self)
 
         self.resize(400,400)
 
         self.accounts = accounts
+        self.rols = rols
         self.instruction = instruction
-        self.selected_accounts = []
+
+        if instruction != None:
+            self.selected_accounts = copy.deepcopy(instruction.accounts)
+        else:
+            self.selected_accounts = []
 
         self.msg_values = Random(0,0, "ether denomination", "wei")
 
@@ -873,6 +900,11 @@ class List_Arguments_Dialog(QDialog):
             self.scroll_widget_layout.addWidget(select_arg_widget)
 
     def check_valid_args(self):
+        # Check if there is at least an account selected
+        if self.selected_accounts == []:
+            return False
+
+        # Check if all arguments are set
         for i in range(self.scroll_widget_layout.count()):
             if self.scroll_widget_layout.itemAt(i).widget().arg == None:
                 return False
@@ -891,7 +923,7 @@ class List_Arguments_Dialog(QDialog):
         self.file_path.setText(path)
 
     def add_accounts(self):
-        dlg = Select_Account_Dialog(self.accounts)
+        dlg = Select_Account_Dialog(self.accounts, self.rols, self.selected_accounts)
 
         if dlg.exec():
             self.selected_accounts = dlg.get_selected_accounts_indexes()
@@ -920,21 +952,39 @@ class List_Arguments_Dialog(QDialog):
         error_message.showMessage("All arguments must be defined")
 
 class Select_Account_Dialog(QDialog):
-    def __init__(self, accounts):
+    def __init__(self, accounts, rols, prev_selected_accounts):
         super().__init__()
         uic.loadUi("./ui/Select_Account_Dialog.ui", self)
 
         self.model = Select_Accounts_Model(accounts)
         self.listView.setModel(self.model)
+        self.rols = rols
+        self.prev_selected_accounts = prev_selected_accounts
+        self.select_accounts(self.prev_selected_accounts)
+
+        self.select_rol.addItems(list(self.rols.keys()))
+        self.select_rol.currentTextChanged.connect(self.select_rol_accounts)
 
     def get_selected_accounts_indexes(self):
         indexes = [index.row() for index in self.listView.selectedIndexes()]
 
         return indexes
 
+    def select_rol_accounts(self):
+        rol = self.rols[self.select_rol.currentText()] # dictionary
+        
+        self.select_accounts(rol.idx)
+
+    def select_accounts(self, indexes):
+        self.listView.clearSelection()
+
+        for idx in indexes:
+            ix = self.listView.model().index(idx, 0)
+            self.listView.selectionModel().setCurrentIndex(ix, QItemSelectionModel.SelectionFlag.Select)   
+
 class Edit_Test_Dialog(Test_Dialog):
     def __init__(self, contracts, project_path, test):
-        super().__init__("Edit_Test.ui",contracts, project_path)
+        super().__init__("Edit_Test.ui",contracts, project_path, test)
 
         # Assigning test attributes as default values
         self.test = test
@@ -957,6 +1007,8 @@ class Manage_Test(QDialog):
         self.project_path = project_path
         self.contracts = contracts
 
+        self.line_edits = {0 : self.lineEdit, 2 : self.copy_test_name}
+
         # connect signals to change the stacked widget current page
         self.create_btn.clicked.connect(lambda : self.stackedWidget.setCurrentIndex(0))
         self.create_btn.clicked.connect(self.enable_disable_btn)
@@ -978,44 +1030,56 @@ class Manage_Test(QDialog):
         self.buttonBox.button(QDialogButtonBox.StandardButton.Ok).setEnabled(False)
 
     def enable_disable_btn(self):
+        current_index = self.stackedWidget.currentIndex()
         
-        if self.stackedWidget.currentIndex() == 0:
-            if self.lineEdit.text() != "":
+        if current_index == 0 or current_index == 2:
+            if self.line_edits[current_index].text() != "":
                 try:
-                    test = self.test_data[self.lineEdit.text()]
+                    test = self.test_data[self.line_edits[current_index].text()]
                     self.buttonBox.button(QDialogButtonBox.StandardButton.Ok).setEnabled(False)
                 except:
                     self.buttonBox.button(QDialogButtonBox.StandardButton.Ok).setEnabled(True)
             else:
                 self.buttonBox.button(QDialogButtonBox.StandardButton.Ok).setEnabled(False)
 
-        elif self.stackedWidget.currentIndex() == 1:
+        elif current_index == 1:
             if self.edit_select.currentText() != "":
                 self.buttonBox.button(QDialogButtonBox.StandardButton.Ok).setEnabled(True)
             else:
                 self.buttonBox.button(QDialogButtonBox.StandardButton.Ok).setEnabled(False)
 
-        elif self.stackedWidget.currentIndex() == 2:
-            pass
-
-    
     # next button ?
     def accept(self) -> None:
         #return super().accept()
         dlg = None
 
-        if self.stackedWidget.currentIndex() == 0:
+        if self.stackedWidget.currentIndex() == 0: # Create New Test
+            test = Test(name=self.lineEdit.text())
+            dlg = Manage_Accounts(False, Test_Dialog, self.contracts, self.project_path, test)
 
-            dlg = Test_Dialog("Test_v2.ui", self.contracts, self.project_path, self.lineEdit.text())
-
-        elif self.stackedWidget.currentIndex() == 1:
+        elif self.stackedWidget.currentIndex() == 1: #Edit Existing Test
             try:
                 test = self.test_data[self.edit_select.currentText()]
-                dlg = Edit_Test_Dialog(self.contracts, self.project_path, test)
+                dlg = Manage_Accounts(True, Edit_Test_Dialog, self.contracts, self.project_path, test)
             except:
                 return # meanwhile
-        elif self.stackedWidget.currentIndex() == 2:
-            pass
+        elif self.stackedWidget.currentIndex() == 2: #Copy Existing Test
+            try:
+                test = self.test_data[self.copy_select.currentText()]
+                copied_test = copy.deepcopy(test)
+                copied_test.name = self.copy_test_name.text()
+
+                src_path = os.path.join(self.project_path, "tests", test.name)
+                dst_path = os.path.join(self.project_path, "tests", copied_test.name)
+
+                #os.mkdir(dst_path)
+                shutil.copytree(src_path, dst_path)
+                
+                #Añadir aqui el nuevo test a la lista de tests?
+                dlg = Manage_Accounts(True, Edit_Test_Dialog, self.contracts, self.project_path, copied_test)
+            except Exception as e:
+                print(e)
+                return # meanwhile
 
         if dlg.exec():
             print("wii")
@@ -1035,6 +1099,58 @@ class Manage_Test(QDialog):
 
         return test_data
           
+class Manage_Accounts(QDialog):
+    def __init__(self, edit_bool, next_dlg, contracts, project_path, test):
+        super().__init__()
+        uic.loadUi("./ui/Manage_Accounts.ui", self)
+
+        self.next_dlg = next_dlg
+        self.contracts = contracts
+        self.project_path = project_path
+        self.test = test
+        self.edit_bool = edit_bool
+
+        self.model = Select_Accounts_Model(self.test.accounts)
+        self.listView.setModel(self.model)
+
+        # connect btns clicked signals to slots
+        self.create_accounts_btn.clicked.connect(self.create_accounts)
+        self.create_rol_btn.clicked.connect(self.create_rol)
+
+    def create_accounts(self):
+        number = self.accounts_number_spin.value()
+        
+        self.test.create_accounts(number)
+        
+        self.model = Select_Accounts_Model(self.test.accounts)
+        self.listView.setModel(self.model)
+
+
+        # create accounts, adds them to a model and add to the qlistview
+
+    def create_rol(self):
+        # hay que verificar que no haya un rol con el mismo nombre primero
+        name = self.rol_name.text()
+        min_idx = self.rol_spin_1.value()
+        max_idx = self.rol_spin_2.value()
+
+        idxs = list(range(min_idx, max_idx))
+
+        self.test.add_new_rol(name, idxs)
+
+    def accept(self) -> None:
+        dlg = None
+
+        if self.edit_bool:
+            dlg = self.next_dlg(self.contracts, self.project_path, self.test)
+        else:
+            dlg = self.next_dlg("Test_v2.ui", self.contracts, self.project_path, self.test)
+
+        if dlg.exec():
+            print("a")
+        else:
+            pass
+
 
 
 

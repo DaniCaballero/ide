@@ -6,44 +6,6 @@ from network import Local_Network
 from web3 import Web3, datastructures
 
 
-def create_genesis_block(accounts, miner, test_path):
-    genesis_config = {"chainId": 1325,
-            "homesteadBlock": 0,
-            "eip150Block": 0,
-            "eip155Block": 0,
-            "eip158Block": 0,
-            "byzantiumBlock": 0,
-            "constantinopleBlock": 0,
-            "petersburgBlock": 0,
-            "istanbulBlock": 0,
-            "berlinBlock": 0,
-            "muirGlacierBlock": 0,
-            "londonBlock" : 0,
-            "clique": {
-                "period": 3,
-                "epoch": 30000
-            }
-            }
-        
-    genesis = {"config": genesis_config,
-        "difficulty": "1",
-        "gasLimit": "8000000",
-        "extradata": f"0x0000000000000000000000000000000000000000000000000000000000000000{miner.address[2:]}0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"
-        }
-
-    default_balance = { "balance": "100000000000000000000" }
-
-    alloc = {}
-    alloc[miner.address[2:]] = default_balance
-    
-    for account in accounts:
-        alloc[account.address[2:]] = default_balance
-
-    genesis["alloc"] = alloc
-
-    with open(os.path.join(test_path, 'genesis.json'), 'w') as f:
-        json.dump(genesis, f)
-
 def set_miner_info(miner, test_path):
     with open(os.path.join(test_path,"key.txt"), "w") as f:
         f.write(miner.private_key)
@@ -59,18 +21,22 @@ class Test:
         self.instructions = []
         self.nodes = []
         self.accounts = []
+        self.rols = {}
         self.project_path = project_path
         self.inst_count = 0
         self.results = []
+        self.use_prev_chain = False
 
     def __str__(self):
         return f"{self.instructions}"
 
-    def _get_args(self, args, iters):
+    def _get_args(self, args):
         data = []
         
         for arg in args:
-            tmp_data = arg.generate_data(iters)
+            #tmp_data = arg.generate_data(iters)
+            tmp_data = arg.data
+            print("data ", tmp_data)
 
             if arg.name == "ether denomination":
                 tmp_data = [Web3.toWei(decimal.Decimal(data), arg.type) for data in tmp_data]
@@ -79,7 +45,7 @@ class Test:
 
         return data
 
-    def add_entry_to_results(self, contract_name, account_address, function_name, args, return_bool, return_value):
+    def add_entry_to_results(self, node_port, contract_name, account_address, function_name, args, return_bool, return_value):
         return_str = ""
 
         if return_bool:
@@ -90,14 +56,13 @@ class Test:
         else:
             return_str = return_value
             
-        row = [contract_name, account_address, function_name, f"{args}", return_str]
+        row = [str(node_port),contract_name, account_address, function_name, f"{args}", return_str]
         self.results.append(row)
 
     def generate_results_csv(self):
-        column_names = ["Contract Name", "Account", "Function Name", "Function arguments", "Return value/Tx hash"]
+        column_names = ["Node port","Contract Name", "Account", "Function Name", "Function arguments", "Return value/Tx hash"]
         df = pandas.DataFrame(self.results, columns=column_names)
         df.to_csv(os.path.join(self.project_path, "tests", self.name, "results.csv"))
-
 
     def calc_total_executions(self):
         total = 0
@@ -108,14 +73,16 @@ class Test:
         return total
 
     def create_accounts(self, acc_number):
-        self.accounts = []
+        #self.accounts = []
         kg = blocksmith.KeyGenerator()
 
         for i in range(acc_number):
             priv_key = kg.generate_key()
             self.accounts.append(Test_Account(f"acccount-{i}", priv_key))
-        
 
+    def add_new_rol(self, name, idxs):
+        self.rols[name] = Rol(name, idxs)
+        
     def _divide_load(self, args, n_iter, nc):
         if n_iter < nc:
             # limitamos el numero de hilos a la cantidad de iteraciones, si es necesario
@@ -150,10 +117,6 @@ class Test:
             return row[0], row[1], []
 
     def _thread_send_transactions(self, time_interval, contract, function_name, th_args_index, args):
-        # loop through args length
-        # pick random choice node
-        # get row of args
-        # send transaction trough contract interaction
         n_iter = th_args_index[0]
         start_time = time.time()
         return_bool, return_value = False, ""
@@ -170,28 +133,19 @@ class Test:
                 return_bool, return_value = contract.deploy(node, w3, account, args_row, msg_value)
             else:
                 return_bool, return_value = contract.contract_interaction(node, w3, account, function_name, args_row, msg_value)
-                
 
-                # try:
-                #     status = w3.debug.traceTransaction(return_value['transactionHash'].hex())
-                #     if len(status.structLogs) > 0:
-                #         print("ERROR ES:", status.structLogs[-1].error)
-                # except:
-                #     pass
-
-            #print("SLEEP TIME: ",time_interval - ((time.time() - start_time)))
             time.sleep(max(time_interval - ((time.time() - start_time)), 0))
             
             start_time = time.time()
 
             lock.acquire()
-            self.add_entry_to_results(contract.name, account.address, function_name, args_row, return_bool, return_value)
+            self.add_entry_to_results(node.port, contract.name, account.address, function_name, args_row, return_bool, return_value)
             self.inst_count += 1
             lock.release()
 
     def end_geth_processes(self, pids):
         for pid in pids:
-            os.kill(pid, signal.SIGINT)
+            os.kill(pid, signal.SIGTERM)
 
     def configure_evironment(self):
         for i in range(3):
@@ -203,27 +157,18 @@ class Test:
         except:
             pass
 
-        create_genesis_block(self.accounts, self.accounts[0], test_path)
-
         set_miner_info(self.accounts[0], test_path)
 
-        http_ports, pids = init_geth_nodes(self.number_of_nodes, test_path, self.accounts[0])
+        http_ports, pids = init_geth_nodes(self.number_of_nodes, test_path, self.accounts, self.use_prev_chain)
         connect_nodes(http_ports)
+        time.sleep(5)
 
         self.nodes = [Local_Network("geth", "", 1325, port) for port in http_ports]
 
         return pids
 
     def run(self):
-        # for instructions
-        # initialize arguments
-        # create threads
-        # assign load to threads
-        # for exec number / time_interval
-        # extract arguments
-        # pick a node
-        # send transaction
-        # write result to file?
+
         global lock
         lock = threading.Lock()
 
@@ -231,14 +176,13 @@ class Test:
 
         for instruction in self.instructions:
             # populate data list of arg
-            args = [instruction.accounts] +self._get_args([instruction.msg_values], instruction.number_of_executions) +self._get_args(instruction.args, instruction.number_of_executions)
-
+            accounts = [self.accounts[index] for index in instruction.accounts]
+            #args = [accounts] +self._get_args([instruction.msg_values], instruction.number_of_executions) +self._get_args(instruction.args, instruction.number_of_executions)
+            args = [accounts] +self._get_args([instruction.msg_values]) +self._get_args(instruction.args)
             threads_args_index = self._divide_load(args, instruction.number_of_executions, self.concurrency_number)
 
             threads = [threading.Thread(target=self._thread_send_transactions, args=(instruction.time_interval,
                         instruction.contract, instruction.function_name, th_args, args,)) for th_args in threads_args_index]
-
-            #self._thread_send_transactions(instruction.time_interval,instruction.contract, instruction.function_name, instruction.visibility, threads_args_index[0], args, args_types)
 
             # Start threads
             for th in threads:
@@ -267,6 +211,7 @@ class Instruction:
         self.use_csv = use_csv
         self.args = args
         self.msg_values = msg_values
+        
 
     def __str__(self):
         return f"{self.function_name}, {self.number_of_executions}"
@@ -316,7 +261,8 @@ class Random(Argument):
         return random.randint(self.min, self.max)
 
     def generate_data(self, iterations):
-        return [random.randint(self.min, self.max) for i in range(iterations)]
+        self.data = [random.randint(self.min, self.max) for i in range(iterations)]
+        return self.data
 
 class File(Argument):
     def __init__(self, file_path, name="", type=""):

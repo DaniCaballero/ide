@@ -298,7 +298,7 @@ border: 1px solid blue;
            </widget>
           </item>
           <item row="1" column="1">
-           <widget class="QLineEdit" name="lineEdit_3"/>
+           <widget class="QLineEdit" name="copy_test_name"/>
           </item>
          </layout>
         </widget>

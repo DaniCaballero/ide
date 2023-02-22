@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>528</width>
-    <height>401</height>
+    <width>434</width>
+    <height>464</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -22,6 +22,29 @@ color: #5b8cb9;</string>
      </property>
      <property name="text">
       <string>Select Accounts</string>
+     </property>
+    </widget>
+   </item>
+   <item>
+    <spacer name="verticalSpacer">
+     <property name="orientation">
+      <enum>Qt::Vertical</enum>
+     </property>
+     <property name="sizeType">
+      <enum>QSizePolicy::Fixed</enum>
+     </property>
+     <property name="sizeHint" stdset="0">
+      <size>
+       <width>20</width>
+       <height>18</height>
+      </size>
+     </property>
+    </spacer>
+   </item>
+   <item>
+    <widget class="QComboBox" name="select_rol">
+     <property name="placeholderText">
+      <string>Select Rol</string>
      </property>
     </widget>
    </item>

@@ -140,3 +140,4 @@ class Select_Accounts_Model(QAbstractListModel):
 
     def rowCount(self, index):
         return len(self.accounts)
+

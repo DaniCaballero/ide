@@ -122,21 +122,24 @@ class Contract:
 
         tx = {"chainId" : network.chain_id, "from" : account.address, "nonce" : nonce, "gasPrice" : w3.eth.gas_price, "value" : msg_value}
 
-        if visibility == "view":
-            value = contract_instance.functions[function_name](*casted_args).call({"from" : account.address})
-            return True, value
+        try:
+            if visibility == "view":
+                value = contract_instance.functions[function_name](*casted_args).call({"from" : account.address})
+                return True, value
 
-        else:
-            try:
+            else:
                 tx = contract_instance.functions[function_name](*casted_args).build_transaction(tx)
                 tx_receipt = self._sign_and_send_tx(tx, account, w3)
 
                 return True, tx_receipt
-            except Exception as e:
-                return False, e
+                
+        except Exception as e:
+            return False, e
 
     def get_instance(self, w3, network):
-        contract_instance = w3.eth.contract(address=self.address[network.chain_id], abi=self.abi)
+        address = self.address[network.chain_id]
+        print(address)
+        contract_instance = w3.eth.contract(address=address, abi=self.abi)
 
         return contract_instance
 

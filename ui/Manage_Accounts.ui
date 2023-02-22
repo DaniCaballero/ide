@@ -30,10 +30,10 @@
           <item>
            <layout class="QHBoxLayout" name="horizontalLayout">
             <item>
-             <widget class="QSpinBox" name="spinBox"/>
+             <widget class="QSpinBox" name="accounts_number_spin"/>
             </item>
             <item>
-             <widget class="QPushButton" name="pushButton">
+             <widget class="QPushButton" name="create_accounts_btn">
               <property name="text">
                <string>Create New Accounts</string>
               </property>
@@ -97,7 +97,7 @@
              </widget>
             </item>
             <item row="0" column="1">
-             <widget class="QLineEdit" name="lineEdit">
+             <widget class="QLineEdit" name="rol_name">
               <property name="placeholderText">
                <string>Rol Name</string>
               </property>
@@ -126,7 +126,7 @@
                </widget>
               </item>
               <item>
-               <widget class="QSpinBox" name="spinBox_2"/>
+               <widget class="QSpinBox" name="rol_spin_1"/>
               </item>
               <item>
                <widget class="QLabel" name="label_2">
@@ -142,7 +142,7 @@
                </widget>
               </item>
               <item>
-               <widget class="QSpinBox" name="spinBox_3"/>
+               <widget class="QSpinBox" name="rol_spin_2"/>
               </item>
              </layout>
             </item>
@@ -171,7 +171,7 @@
              </spacer>
             </item>
             <item>
-             <widget class="QPushButton" name="pushButton_3">
+             <widget class="QPushButton" name="create_rol_btn">
               <property name="text">
                <string>Create</string>
               </property>

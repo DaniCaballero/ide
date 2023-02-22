@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>802</width>
-    <height>546</height>
+    <height>501</height>
    </rect>
   </property>
   <property name="sizePolicy">
@@ -29,7 +29,7 @@
 
 </string>
   </property>
-  <layout class="QHBoxLayout" name="horizontalLayout_5">
+  <layout class="QHBoxLayout" name="horizontalLayout">
    <item>
     <widget class="QWidget" name="widget" native="true">
      <property name="sizePolicy">
@@ -88,72 +88,13 @@
          </widget>
         </item>
         <item row="1" column="0">
-         <widget class="QLabel" name="label_2">
-          <property name="text">
-           <string>Accounts:</string>
-          </property>
-         </widget>
-        </item>
-        <item row="1" column="1">
-         <layout class="QHBoxLayout" name="horizontalLayout">
-          <item>
-           <widget class="QSpinBox" name="accounts_number">
-            <property name="sizePolicy">
-             <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
-              <horstretch>0</horstretch>
-              <verstretch>0</verstretch>
-             </sizepolicy>
-            </property>
-           </widget>
-          </item>
-          <item>
-           <widget class="QPushButton" name="create_accounts_btn">
-            <property name="sizePolicy">
-             <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
-              <horstretch>0</horstretch>
-              <verstretch>0</verstretch>
-             </sizepolicy>
-            </property>
-            <property name="styleSheet">
-             <string notr="true">#create_accounts_btn {
-background-color: white;
-border: 1px solid #5b8cb9;
-
-padding: 5px 10px;
-}
-
-#create_accounts_btn::hover {
-background-color: #f2f5ff;
-}</string>
-            </property>
-            <property name="text">
-             <string>Create</string>
-            </property>
-           </widget>
-          </item>
-          <item>
-           <spacer name="horizontalSpacer">
-            <property name="orientation">
-             <enum>Qt::Horizontal</enum>
-            </property>
-            <property name="sizeHint" stdset="0">
-             <size>
-              <width>28</width>
-              <height>20</height>
-             </size>
-            </property>
-           </spacer>
-          </item>
-         </layout>
-        </item>
-        <item row="2" column="0">
          <widget class="QLabel" name="label_5">
           <property name="text">
            <string>Number of nodes:</string>
           </property>
          </widget>
         </item>
-        <item row="2" column="1">
+        <item row="1" column="1">
          <layout class="QHBoxLayout" name="horizontalLayout_2">
           <item>
            <widget class="QSpinBox" name="spinBox">
@@ -177,14 +118,14 @@ background-color: #f2f5ff;
           </item>
          </layout>
         </item>
-        <item row="3" column="0">
+        <item row="2" column="0">
          <widget class="QLabel" name="label_6">
           <property name="text">
            <string>Concurrency number:</string>
           </property>
          </widget>
         </item>
-        <item row="3" column="1">
+        <item row="2" column="1">
          <layout class="QHBoxLayout" name="horizontalLayout_3">
           <item>
            <widget class="QSpinBox" name="spinBox_2">
@@ -398,7 +339,7 @@ background-color: #f2f5ff;
         <x>0</x>
         <y>0</y>
         <width>421</width>
-        <height>522</height>
+        <height>477</height>
        </rect>
       </property>
       <layout class="QVBoxLayout" name="verticalLayout_3">
