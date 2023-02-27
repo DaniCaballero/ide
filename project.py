@@ -9,7 +9,7 @@ from solidity_lexer import CustomSolidityLexer
 class Project:
     def __init__(self, path=""):
         self.path = path
-        self.dir_names = ["build", "contracts", "NFTs", "tests", "scripts"]
+        self.dir_names = ["build", "contracts", "NFTs", "IPFS", "tests", "scripts"]
 
     def init_project(self):
         dir_list = os.listdir(self.path)

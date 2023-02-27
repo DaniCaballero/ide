@@ -1,4 +1,4 @@
-import subprocess, sys, time, os, socket, json
+import subprocess, sys, time, os, socket, json, shutil
 from contextlib import closing
 from web3 import Web3
 from pathlib import Path
@@ -88,38 +88,33 @@ def init_new_blockchain(accounts, miner, nodes_path, number_of_nodes):
 
     for i in range(number_of_nodes):
         try:
-            os.mkdir(os.path.join(nodes_path, f"node{i}"))
+            shutil.rmtree(os.path.join(nodes_path, f"node{i}"))
         except:
             pass
+
+        os.mkdir(os.path.join(nodes_path, f"node{i}"))
 
         # link con el bloque genesis
     for i in range(number_of_nodes):
         subprocess.Popen(['geth', '--datadir', os.path.join(nodes_path, f"node{i}"), 'init', os.path.join(nodes_path, 'genesis.json')])
 
-def init_geth_nodes(number_of_nodes, nodes_path, accounts, use_prev_chain):
+    time.sleep(4)
+    subprocess.Popen(['geth', '--datadir', os.path.join(nodes_path, "node0"),'--password', os.path.join(nodes_path, "pwd.txt"),'account', 'import', os.path.join(nodes_path, "key.txt")])
+
+def init_geth_nodes(number_of_nodes, nodes_path, accounts):
     miner = accounts[0]
+    nodes_dirs_exists = True
 
-    if use_prev_chain == True:
-        nodes_dirs_exists = True
-        
-        for i in range(number_of_nodes):
-            if Path(os.path.join(nodes_path, f"node{i}")).exists():
-                continue
-            else:
-                nodes_dirs_exists = False
+    for i in range(number_of_nodes):
+        if Path(os.path.join(nodes_path, f"node{i}")).exists():
+            continue
+        else:
+            nodes_dirs_exists = False
 
-        if nodes_dirs_exists == False:
-            init_new_blockchain(accounts, miner, nodes_path, number_of_nodes)
-            time.sleep(4)
-            subprocess.Popen(['geth', '--datadir', os.path.join(nodes_path, "node0"),'--password', os.path.join(nodes_path, "pwd.txt"),'account', 'import', os.path.join(nodes_path, "key.txt")])
-    else:
+    if nodes_dirs_exists == False:
         init_new_blockchain(accounts, miner, nodes_path, number_of_nodes)
-        time.sleep(4)
-        subprocess.Popen(['geth', '--datadir', os.path.join(nodes_path, "node0"),'--password', os.path.join(nodes_path, "pwd.txt"),'account', 'import', os.path.join(nodes_path, "key.txt")])
 
     port_dict = get_ports(number_of_nodes)
-
-    #time.sleep(4)
 
     time.sleep(4)
 

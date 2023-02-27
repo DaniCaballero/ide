@@ -194,7 +194,7 @@
          <string notr="true">#add_inst_btn {
 border: none;
 padding:  10px;
-background-color: #5b8cb9;
+background-color: #3f5c73;
 color: white;
 font-weight: bold;
 }
@@ -230,8 +230,8 @@ background-color: #517da6
           </property>
           <property name="styleSheet">
            <string notr="true">#run_test_btn {
-border: 1px solid #5b8cb9;
-background-color: #5b8cb9;
+border: 1px solid #3f5c73;
+background-color: #3f5c73;
 color: white;
 font-weight: bold;
 padding: 5px 15px;
@@ -328,7 +328,7 @@ background-color: #f2f5ff;
       <bool>false</bool>
      </property>
      <property name="styleSheet">
-      <string notr="true">background-color:#f2f5ff; border: 1px solid #ddf5ff;</string>
+      <string notr="true">background-color:#ebf0f4; border: 1px solid #ddf5ff;</string>
      </property>
      <property name="widgetResizable">
       <bool>true</bool>

@@ -89,7 +89,7 @@
           </property>
           <property name="styleSheet">
            <string notr="true">border: 1px solid #5b8cb9;  
-background-color: #f2f5ff;</string>
+background-color: #ebf0f4;</string>
           </property>
           <property name="placeholderText">
            <string>Select Contract</string>
@@ -112,7 +112,7 @@ background-color: #f2f5ff;</string>
           </property>
           <property name="styleSheet">
            <string notr="true">border: 1px solid #5b8cb9;  
-background-color: #f2f5ff;</string>
+background-color: #ebf0f4;</string>
           </property>
           <property name="placeholderText">
            <string>version</string>
@@ -135,7 +135,7 @@ background-color: #f2f5ff;</string>
           </property>
           <property name="styleSheet">
            <string notr="true">border: 1px solid #5b8cb9;
-background-color: #f2f5ff;</string>
+background-color: #ebf0f4;</string>
           </property>
           <property name="placeholderText">
            <string>Select Function</string>
@@ -170,7 +170,7 @@ background-color: #f2f5ff;</string>
             </property>
             <property name="styleSheet">
              <string notr="true">border: 1px solid #5b8cb9;
-background-color: #f2f5ff;</string>
+background-color: #ebf0f4;</string>
             </property>
            </widget>
           </item>
@@ -191,7 +191,7 @@ background-color: #f2f5ff;</string>
            <widget class="QDoubleSpinBox" name="time_interval">
             <property name="styleSheet">
              <string notr="true">border: 1px solid #5b8cb9;
-background-color: #f2f5ff;</string>
+background-color: #ebf0f4;</string>
             </property>
            </widget>
           </item>
@@ -231,7 +231,7 @@ background-color: #f2f5ff;</string>
           </property>
           <property name="styleSheet">
            <string notr="true">#select_arguments {
-border: none; padding: 5px; background-color: #5b8cb9; color: white;
+border: none; padding: 5px; background-color: #3f5c73; color: white;
 }
 
 #select_arguments::hover {

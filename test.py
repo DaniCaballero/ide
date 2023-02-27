@@ -3,7 +3,7 @@ from PyQt6.QtCore import QThread, QObject, pyqtSignal
 from account import Account, Test_Account
 from geth_nodes import init_geth_nodes, connect_nodes
 from network import Local_Network
-from web3 import Web3, datastructures
+from web3 import Web3, datastructures, middleware
 
 
 def set_miner_info(miner, test_path):
@@ -25,7 +25,8 @@ class Test:
         self.project_path = project_path
         self.inst_count = 0
         self.results = []
-        self.use_prev_chain = False
+        self.prev_outputs = {}
+        self.error = False
 
     def __str__(self):
         return f"{self.instructions}"
@@ -40,6 +41,9 @@ class Test:
 
             if arg.name == "ether denomination":
                 tmp_data = [Web3.toWei(decimal.Decimal(data), arg.type) for data in tmp_data]
+
+            if arg.__class__.__name__ == "Prev_Output":
+                tmp_data = self.prev_outputs[arg.output_dict_name]
 
             data.append(tmp_data)
 
@@ -115,8 +119,12 @@ class Test:
             return row[0], row[1], row[2:]
         else:
             return row[0], row[1], []
+        
+    def add_to_prev_output(self, value, key):
+        if key != None:
+            self.prev_outputs[key].append(value)
 
-    def _thread_send_transactions(self, time_interval, contract, function_name, th_args_index, args):
+    def _thread_send_transactions(self, time_interval, contract, function_name, prev_output_key, th_args_index, args):
         n_iter = th_args_index[0]
         start_time = time.time()
         return_bool, return_value = False, ""
@@ -124,6 +132,7 @@ class Test:
         for i in range(n_iter):
             node = random.choice(self.nodes)
             w3 = node.connect_to_node()
+            #w3.middleware_onion.add(middleware.pythonic.pythonic_middleware)
 
             account, msg_value, args_row = self._extract_row(i, th_args_index[1], args)
 
@@ -139,18 +148,20 @@ class Test:
             start_time = time.time()
 
             lock.acquire()
+            self.add_to_prev_output(return_value, prev_output_key)
             self.add_entry_to_results(node.port, contract.name, account.address, function_name, args_row, return_bool, return_value)
             self.inst_count += 1
             lock.release()
 
     def end_geth_processes(self, pids):
         for pid in pids:
-            os.kill(pid, signal.SIGTERM)
+            try:
+                os.kill(pid, signal.SIGTERM)
+            except:
+                pass
 
     def configure_evironment(self):
-        for i in range(3):
-            print("PRIVAT KEY: ", self.accounts[i].address, self.accounts[i].private_key)
-        
+       
         test_path = os.path.join(self.project_path, "tests", self.name)
         try:
             os.mkdir(test_path)
@@ -159,7 +170,7 @@ class Test:
 
         set_miner_info(self.accounts[0], test_path)
 
-        http_ports, pids = init_geth_nodes(self.number_of_nodes, test_path, self.accounts, self.use_prev_chain)
+        http_ports, pids = init_geth_nodes(self.number_of_nodes, test_path, self.accounts)
         connect_nodes(http_ports)
         time.sleep(5)
 
@@ -169,31 +180,40 @@ class Test:
 
     def run(self):
 
-        global lock
-        lock = threading.Lock()
+        try:
+            global lock
+            lock = threading.Lock()
 
-        pids = self.configure_evironment()
+            pids = self.configure_evironment()
 
-        for instruction in self.instructions:
-            # populate data list of arg
-            accounts = [self.accounts[index] for index in instruction.accounts]
-            #args = [accounts] +self._get_args([instruction.msg_values], instruction.number_of_executions) +self._get_args(instruction.args, instruction.number_of_executions)
-            args = [accounts] +self._get_args([instruction.msg_values]) +self._get_args(instruction.args)
-            threads_args_index = self._divide_load(args, instruction.number_of_executions, self.concurrency_number)
+            for instruction in self.instructions:
+                # populate data list of arg
+                accounts = [self.accounts[index] for index in instruction.accounts]
+                #args = [accounts] +self._get_args([instruction.msg_values], instruction.number_of_executions) +self._get_args(instruction.args, instruction.number_of_executions)
+                args = [accounts] +self._get_args([instruction.msg_values]) +self._get_args(instruction.args)
+                threads_args_index = self._divide_load(args, instruction.number_of_executions, self.concurrency_number)
 
-            threads = [threading.Thread(target=self._thread_send_transactions, args=(instruction.time_interval,
-                        instruction.contract, instruction.function_name, th_args, args,)) for th_args in threads_args_index]
+                threads = [threading.Thread(target=self._thread_send_transactions, args=(instruction.time_interval,
+                            instruction.contract, instruction.function_name, instruction.prev_output_key, th_args, args,)) for th_args in threads_args_index]
 
-            # Start threads
-            for th in threads:
-                th.start()
+                # Start threads
+                for th in threads:
+                    th.start()
 
-            # Wait for all threads to finish to move onto the next transaction
-            for th in threads:
-                th.join()
+                # Wait for all threads to finish to move onto the next transaction
+                for th in threads:
+                    th.join()
 
-        self.generate_results_csv()
-        self.end_geth_processes(pids)
+            self.generate_results_csv()
+            self.end_geth_processes(pids)
+
+        except Exception as e:
+            self.error = True
+            self.add_entry_to_results("", "", "", "", "", "", e)
+            self.generate_results_csv()
+            self.end_geth_processes(pids)
+
+
 
 class Rol:
     def __init__(self, name, idx : list):
@@ -201,7 +221,7 @@ class Rol:
         self.idx = idx
 
 class Instruction:
-    def __init__(self, contract, version, function_name, number_of_executions, args, msg_values,time_interval=0,accounts=[], use_csv=False):
+    def __init__(self, contract, version, function_name, number_of_executions, args, msg_values, prev_output_key,time_interval=0,accounts=[], use_csv=False):
         self.contract = contract
         self.version = version
         self.function_name = function_name
@@ -211,6 +231,7 @@ class Instruction:
         self.use_csv = use_csv
         self.args = args
         self.msg_values = msg_values
+        self.prev_output_key = prev_output_key
         
 
     def __str__(self):
@@ -263,6 +284,15 @@ class Random(Argument):
     def generate_data(self, iterations):
         self.data = [random.randint(self.min, self.max) for i in range(iterations)]
         return self.data
+    
+class Prev_Output(Argument):
+    def __init__(self, output_dict_name, name = "", type = ""):
+        super().__init__(name, type)
+
+        self.output_dict_name = output_dict_name
+
+    def generate_data(self, iterations):
+        return []
 
 class File(Argument):
     def __init__(self, file_path, name="", type=""):
@@ -271,7 +301,7 @@ class File(Argument):
         self.path = file_path
 
     def generate_data(self, iterations):
-        df = pandas.read_csv(self.path, sep=";")
+        df = pandas.read_csv(self.path, sep=";", skipinitialspace=True)
 
         self.data = list(df[self.name])
         #print("DATOS", self.data)
@@ -285,6 +315,7 @@ class IPFS_Data:
 
 class Worker(QObject):
     progressChanged = pyqtSignal(int)
+    errorFound = pyqtSignal()
     finished = pyqtSignal()
 
     def __init__(self, test):
@@ -295,7 +326,7 @@ class Worker(QObject):
         count, progress = 0, 0
         total_instructions = self.test.calc_total_executions()
 
-        while count <= total_instructions:
+        while count <= total_instructions and self.test.error == False:
             count = self.test.inst_count
             progress = int(count * (100 / total_instructions))
             #print("progress",progress)
@@ -305,3 +336,7 @@ class Worker(QObject):
                 print(progress)
                 self.finished.emit()
                 break
+
+        if self.test.error == True:
+            self.errorFound.emit()
+            self.finished.emit()

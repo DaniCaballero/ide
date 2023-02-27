@@ -1,6 +1,7 @@
 import web3
 import re
 
+
 def get_substrings(string):
     '''This function extracts susbtrings that are lists and assigns them a placeholder text
     so they can be subsituted in a string and then reassigned back after a split by ',' is done'''
@@ -57,12 +58,25 @@ def cast_web3_helper(arg_type, args, list_bool, temp):
             if arg_type_tmp == "address":
                 args = [TYPE_CAST[arg_type_tmp](i) for i in args]
                 temp.append(args)
+            elif arg_type_tmp == "bytes":
+                try:
+                    args = [arg.hex() for arg in args]
+                except:
+                    pass
+                args = [TYPE_CAST[arg_type_tmp](hexstr=i) for i in args]
+                temp.append(args)
             else:
                 args = [TYPE_CAST[arg_type_tmp](text=i) for i in args]
                 temp.append(args)
         else:
             if arg_type_tmp == "address":
                 temp.append(TYPE_CAST[arg_type_tmp](args))
+            elif arg_type_tmp == "bytes":
+                try:
+                    args = args.hex()
+                except:
+                    pass
+                temp.append(TYPE_CAST[arg_type_tmp](hexstr=args))
             else:
                 temp.append(TYPE_CAST[arg_type_tmp](text=args))
     else:
@@ -123,7 +137,7 @@ class Contract:
         tx = {"chainId" : network.chain_id, "from" : account.address, "nonce" : nonce, "gasPrice" : w3.eth.gas_price, "value" : msg_value}
 
         try:
-            if visibility == "view":
+            if visibility == "view" or visibility == "pure":
                 value = contract_instance.functions[function_name](*casted_args).call({"from" : account.address})
                 return True, value
 

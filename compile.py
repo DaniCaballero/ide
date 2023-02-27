@@ -3,7 +3,7 @@ from packaging.version import Version
 from contract import Contract
 from pathlib import Path
 import json, os, operator, re
-import tkinter as tk
+
 
 def custom_compare(version0, version1):
     if version0.major == version1.major and version0.minor == version1.minor:
@@ -122,6 +122,7 @@ def write_json(contract_tuple, state):
             json.dump(json_file, file)
 
 def compile_contract(state, version, file_name, overwrite):
+    print("file name ", file_name)
     contracts_folder_path = os.path.join(state.project.path, "contracts")
     
     compiled_sol = compile_files(
@@ -131,18 +132,22 @@ def compile_contract(state, version, file_name, overwrite):
         allow_paths=contracts_folder_path)
 
     for contract in compiled_sol.keys():
-        contract_name = contract.split(":")[1]
-        bytecode = compiled_sol[contract]["bin"]
-        abi = compiled_sol[contract]["abi"]
-        contract = Contract(f"{contract_name}-{file_name}", abi, bytecode)
+        contract_path = contract.split(":")
 
-        try:
-            if overwrite:
-                state.contracts[f"{contract_name}-{file_name}"][-1] = contract
-            else:
-                state.contracts[f"{contract_name}-{file_name}"].append(contract)
-        except:
-            state.contracts[f"{contract_name}-{file_name}"] = [contract]
+        if Path(contract_path[-2]).name == file_name:
+            
+            contract_name = contract_path[-1]
+            bytecode = compiled_sol[contract]["bin"]
+            abi = compiled_sol[contract]["abi"]
+            contract = Contract(f"{contract_name}-{file_name}", abi, bytecode)
+
+            try:
+                if overwrite:
+                    state.contracts[f"{contract_name}-{file_name}"][-1] = contract
+                else:
+                    state.contracts[f"{contract_name}-{file_name}"].append(contract)
+            except:
+                state.contracts[f"{contract_name}-{file_name}"] = [contract]
 
     return compiled_sol
 

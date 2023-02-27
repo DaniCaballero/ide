@@ -1,9 +1,9 @@
 from PyQt6.QtCore import QSize, Qt, QThread
 from PyQt6.QtWidgets import (QApplication, QWidget, QMainWindow, QLabel, QLineEdit, QVBoxLayout, QMenu, QHBoxLayout, QTextEdit, 
-                            QTabWidget, QStackedLayout, QFrame, QToolButton, QSplitter, QStyleFactory, QMessageBox)
+                            QTabWidget, QStackedLayout, QFrame, QToolButton, QSplitter, QStyleFactory, QMessageBox, QErrorMessage)
 from menu_functions import *
 from dialogs import (Compile_Dialog, Add_Account_Dialog, Add_Node_Dialog, Deploy_Dialog, IPFS_Token_Dialog, Functions_Layout, 
-                    Project_Widget, Left_Widget, Test_Dialog, Create_Project_Dialog, Manage_Test)
+                    Project_Widget, Left_Widget, Test_Dialog, Create_Project_Dialog, Manage_Test, Add_Files_IPFS)
 from account import Account, add_local_accounts
 from network import Network, init_ganache
 from ipfs import IPFS
@@ -100,7 +100,7 @@ class MainWindow(QMainWindow):
         create_menu_option("Compile", ["Compile File", "Compile All"], [lambda_func(compile_file, self), lambda_func(compile_file, self)],["",""], menu, self)
         create_menu_option("Accounts", ["Add account", "Generate account"], [lambda_func(add_account, self), lambda_func(generate_account, self)], ["",""],menu, self)
         create_menu_option("Networks", ["Add node provider"], [lambda_func(add_node_provider, self)], [""], menu, self)
-        create_menu_option("IPFS", ["Add Token ID", "Add file"], [lambda_func(add_token_id, self), lambda_func(add_file_to_ipfs, self)], [","], menu, self)
+        create_menu_option("IPFS", ["Add Token ID", "Add file"], [lambda_func(add_token_id, self), self.add_to_ipfs], ["",""], menu, self)
         create_menu_option("Deploy", ["Deploy contract"], [lambda_func(deploy_contract, self)], [""], menu, self)
         create_menu_option("Tests", ["Create Test"], [self.create_test], [""], menu, self)
         
@@ -208,9 +208,7 @@ class MainWindow(QMainWindow):
             self.editor_tab.setTabText(self.editor_tab.currentIndex(),editor.file_name)
             self.statusBar().showMessage(f"Saved file at {path}", 2000)
 
-    def close_file(self):
-        index = self.editor_tab.currentIndex()
-
+    def close_file(self, index):
 
         if self.editor_tab.currentWidget().text() != "" or self.editor_tab.currentWidget().file_path != "":
             if self.editor_tab.currentWidget().file_path != "":
@@ -260,6 +258,19 @@ class MainWindow(QMainWindow):
         else:
             print("WAINS")
 
+    def add_to_ipfs(self):
+        dlg = Add_Files_IPFS(self.project.path)
+
+        if dlg.exec():
+            multiple_files, path, name = dlg.get_input()
+
+            try:
+                self.ipfs.upload_to_ipfs(path, name, multiple_files, self.project.path)
+            except:
+                error_msg = QErrorMessage(self)
+                error_msg.showMessage("Unabled to upload files to IPFS")
+                
+
     def load_data(self):
         try:
             path = self.project.path
@@ -269,6 +280,7 @@ class MainWindow(QMainWindow):
             self.accounts = data["accounts"]
             self.networks = data["networks"]
             self.contracts = data["contracts"]
+            self.ipfs = data["ipfs"]
 
         except Exception:
             pass
@@ -279,6 +291,7 @@ class MainWindow(QMainWindow):
         data["accounts"] = self.accounts
         data["networks"] = self.networks
         data["contracts"] = self.contracts
+        data["ipfs"] = self.ipfs
 
         with open(os.path.join(path, "data.pkl"), "wb") as f:
             pickle.dump(data, f)
@@ -302,7 +315,7 @@ app = QApplication([])
 window = MainWindow()
 window.show()
 
-app.exec()
+sys.exit(app.exec())
 
 
 #sys.exit(app)

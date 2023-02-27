@@ -42,10 +42,10 @@ background-color: white;
        </property>
        <property name="styleSheet">
         <string notr="true">QPushButton {
-border: 1px blue;
+border: 1px white;
 border-style: none none solid none;
-background-color: #d6f2ff;
 padding: 8px 0;
+color: white;
 }
 
 QPushButton::hover {
@@ -53,7 +53,8 @@ background-color: lightgrey;
 }
 
 #frame {
-border: 1px solid blue;
+border: 1px solid #3f5c73;
+background-color: #3f5c73;
 }</string>
        </property>
        <property name="frameShape">
@@ -82,11 +83,38 @@ border: 1px solid blue;
             <property name="palette">
              <palette>
               <active>
+               <colorrole role="WindowText">
+                <brush brushstyle="SolidPattern">
+                 <color alpha="255">
+                  <red>255</red>
+                  <green>255</green>
+                  <blue>255</blue>
+                 </color>
+                </brush>
+               </colorrole>
                <colorrole role="Button">
                 <brush brushstyle="SolidPattern">
                  <color alpha="255">
                   <red>214</red>
                   <green>242</green>
+                  <blue>255</blue>
+                 </color>
+                </brush>
+               </colorrole>
+               <colorrole role="Text">
+                <brush brushstyle="SolidPattern">
+                 <color alpha="255">
+                  <red>255</red>
+                  <green>255</green>
+                  <blue>255</blue>
+                 </color>
+                </brush>
+               </colorrole>
+               <colorrole role="ButtonText">
+                <brush brushstyle="SolidPattern">
+                 <color alpha="255">
+                  <red>255</red>
+                  <green>255</green>
                   <blue>255</blue>
                  </color>
                 </brush>
@@ -105,17 +133,53 @@ border: 1px solid blue;
                  <color alpha="255">
                   <red>214</red>
                   <green>242</green>
+                  <blue>255</blue>
+                 </color>
+                </brush>
+               </colorrole>
+               <colorrole role="PlaceholderText">
+                <brush brushstyle="SolidPattern">
+                 <color alpha="255">
+                  <red>255</red>
+                  <green>255</green>
                   <blue>255</blue>
                  </color>
                 </brush>
                </colorrole>
               </active>
               <inactive>
+               <colorrole role="WindowText">
+                <brush brushstyle="SolidPattern">
+                 <color alpha="255">
+                  <red>255</red>
+                  <green>255</green>
+                  <blue>255</blue>
+                 </color>
+                </brush>
+               </colorrole>
                <colorrole role="Button">
                 <brush brushstyle="SolidPattern">
                  <color alpha="255">
                   <red>214</red>
                   <green>242</green>
+                  <blue>255</blue>
+                 </color>
+                </brush>
+               </colorrole>
+               <colorrole role="Text">
+                <brush brushstyle="SolidPattern">
+                 <color alpha="255">
+                  <red>255</red>
+                  <green>255</green>
+                  <blue>255</blue>
+                 </color>
+                </brush>
+               </colorrole>
+               <colorrole role="ButtonText">
+                <brush brushstyle="SolidPattern">
+                 <color alpha="255">
+                  <red>255</red>
+                  <green>255</green>
                   <blue>255</blue>
                  </color>
                 </brush>
@@ -134,17 +198,53 @@ border: 1px solid blue;
                  <color alpha="255">
                   <red>214</red>
                   <green>242</green>
+                  <blue>255</blue>
+                 </color>
+                </brush>
+               </colorrole>
+               <colorrole role="PlaceholderText">
+                <brush brushstyle="SolidPattern">
+                 <color alpha="255">
+                  <red>255</red>
+                  <green>255</green>
                   <blue>255</blue>
                  </color>
                 </brush>
                </colorrole>
               </inactive>
               <disabled>
+               <colorrole role="WindowText">
+                <brush brushstyle="SolidPattern">
+                 <color alpha="255">
+                  <red>255</red>
+                  <green>255</green>
+                  <blue>255</blue>
+                 </color>
+                </brush>
+               </colorrole>
                <colorrole role="Button">
                 <brush brushstyle="SolidPattern">
                  <color alpha="255">
                   <red>214</red>
                   <green>242</green>
+                  <blue>255</blue>
+                 </color>
+                </brush>
+               </colorrole>
+               <colorrole role="Text">
+                <brush brushstyle="SolidPattern">
+                 <color alpha="255">
+                  <red>255</red>
+                  <green>255</green>
+                  <blue>255</blue>
+                 </color>
+                </brush>
+               </colorrole>
+               <colorrole role="ButtonText">
+                <brush brushstyle="SolidPattern">
+                 <color alpha="255">
+                  <red>255</red>
+                  <green>255</green>
                   <blue>255</blue>
                  </color>
                 </brush>
@@ -163,6 +263,15 @@ border: 1px solid blue;
                  <color alpha="255">
                   <red>214</red>
                   <green>242</green>
+                  <blue>255</blue>
+                 </color>
+                </brush>
+               </colorrole>
+               <colorrole role="PlaceholderText">
+                <brush brushstyle="SolidPattern">
+                 <color alpha="255">
+                  <red>255</red>
+                  <green>255</green>
                   <blue>255</blue>
                  </color>
                 </brush>
@@ -191,7 +300,7 @@ border: 1px solid blue;
           <item>
            <widget class="QPushButton" name="copy_btn">
             <property name="styleSheet">
-             <string notr="true">border-bottom: 1px solid #0078df;</string>
+             <string notr="true">border-bottom: 1px solid white;</string>
             </property>
             <property name="text">
              <string>Copy Existing Test</string>

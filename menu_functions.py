@@ -202,12 +202,12 @@ def add_token_id(state):
         state.ipfs = ipfs
         state.output.append(f"Web3Storage token id added")
 
-def add_file_to_ipfs(state):
-    path, _ = QFileDialog.getOpenFileName(state, "Open File", "", "All files (*)")
-    if path != "":
-        print(path)
-        #state.ipfs.add_file(path)
-        threading.Thread(target=state.ipfs.add_file, args=(state, path)).start()
+# def add_file_to_ipfs(state):
+#     path, _ = QFileDialog.getOpenFileName(state, "Open File", "", "All files (*)")
+#     if path != "":
+#         print(path)
+#         #state.ipfs.add_file(path)
+#         threading.Thread(target=state.ipfs.add_file, args=(state, path)).start()
 
 
 
