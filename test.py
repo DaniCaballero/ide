@@ -136,12 +136,16 @@ class Test:
 
             account, msg_value, args_row = self._extract_row(i, th_args_index[1], args)
 
-            if function_name == "constructor":
-                node = self.nodes[0]
-                w3 = node.connect_to_node()
-                return_bool, return_value = contract.deploy(node, w3, account, args_row, msg_value)
+            if contract == "":
+                return_value = w3.eth.getBalance(account.address)
+                return_bool = True
             else:
-                return_bool, return_value = contract.contract_interaction(node, w3, account, function_name, args_row, msg_value)
+                if function_name == "constructor":
+                    node = self.nodes[0]
+                    w3 = node.connect_to_node()
+                    return_bool, return_value = contract.deploy(node, w3, account, args_row, msg_value)
+                else:
+                    return_bool, return_value = contract.contract_interaction(node, w3, account, function_name, args_row, msg_value)
 
             time.sleep(max(time_interval - ((time.time() - start_time)), 0))
             
@@ -149,7 +153,7 @@ class Test:
 
             lock.acquire()
             self.add_to_prev_output(return_value, prev_output_key)
-            self.add_entry_to_results(node.port, contract.name, account.address, function_name, args_row, return_bool, return_value)
+            self.add_entry_to_results(node.port, str(contract), account.address, function_name, args_row, return_bool, return_value)
             self.inst_count += 1
             lock.release()
 

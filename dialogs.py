@@ -524,7 +524,7 @@ class Test_Dialog(QDialog):
         self.test_name.setText(self.test.name)
         self.test_name.setEnabled(False)
 
-        self.add_inst_btn.clicked.connect(lambda : self.add_instruction())
+        self.add_inst_btn.clicked.connect(self.select_instruction)
         self.run_test_btn.clicked.connect(self.run_test)
         self.create_test_btn.clicked.connect(self.create_test)
 
@@ -540,14 +540,30 @@ class Test_Dialog(QDialog):
 
         #self.test = Test(name=test_name)
 
-    def add_instruction(self, instruction=None):
+    def select_instruction(self):
+        dlg = Select_Instruction()
+        is_contract_instruction = False
+
+        if dlg.exec():
+            if dlg.contract_radio.isChecked():
+                is_contract_instruction = True
+            
+            self.add_instruction(is_contract_instruction)
+        else:
+            pass
+
+    def add_instruction(self, is_contract_instruction, instruction=None):
         shadow = QGraphicsDropShadowEffect()
         shadow.setBlurRadius(25)
         shadow.setColor(QColor("#ADAAB5"))
         shadow.setOffset(4)
         print("instruction ", instruction )
 
-        ui_instruction = Instruction_Widget(self.contracts, self.test.accounts, self.test.rols, self.test, instruction)
+        if is_contract_instruction:
+            ui_instruction = Instruction_Widget(self.contracts, self.test.accounts, self.test.rols, self.test, instruction)
+        else:
+            ui_instruction = Instruction_Balance_Widget(self.test, instruction)
+
         ui_instruction.setGraphicsEffect(shadow)
         shadow.setEnabled(True)
         self.scroll_widget_layout.addWidget(ui_instruction)
@@ -573,6 +589,8 @@ class Test_Dialog(QDialog):
         try:
             for i in range(self.scroll_widget_layout.count()):
                 self.instructions.append(self.scroll_widget_layout.itemAt(i).widget().get_instruction())
+
+            print("All instructions ", self.instructions)
         except:
             error_message = QErrorMessage(self)
             error_message.showMessage("All instructions must be defined")
@@ -622,6 +640,19 @@ class Test_Dialog(QDialog):
         self.thread.worker = worker
 
         self.thread.start()
+
+class Select_Instruction(QDialog):
+    def __init__(self):
+        super().__init__()
+        uic.loadUi("./ui/Select_Instruction.ui", self)
+
+        self.contract_radio.toggled.connect(self.enable_ok)
+        self.balance_radio.toggled.connect(self.enable_ok)
+
+        self.buttonBox.button(QDialogButtonBox.StandardButton.Ok).setEnabled(False)
+
+    def enable_ok(self):
+        self.buttonBox.button(QDialogButtonBox.StandardButton.Ok).setEnabled(True)
 
 class Argument_Dialog(QDialog):
     def __init__(self, prev_output_dict, arg = None):
@@ -1082,7 +1113,8 @@ class Edit_Test_Dialog(Test_Dialog):
     def add_existing_instructions(self):
 
         for instruction in self.test.instructions:
-            self.add_instruction(instruction)
+            is_contract_instruction = instruction.contract != ""
+            self.add_instruction(is_contract_instruction, instruction)
 
 class Manage_Test(QDialog):
     def __init__(self, contracts, project_path):
@@ -1236,7 +1268,63 @@ class Manage_Accounts(QDialog):
         else:
             pass
 
+class Instruction_Balance_Widget(QWidget):
+    def __init__(self, test, instruction = None):
+        super().__init__()
+        uic.loadUi("./ui/Instruction_Balance.ui", self)
 
+        self.test = test
+        self.instruction = instruction
+        
+        self.instruction_accounts = []
+        self.msg_values = Random(0,0, "ether denomination", "wei")
+        self.is_defined = False
+        self.prev_output_key = None
+
+        self.delete_btn.setIcon(QIcon('./clear.png'))
+
+        self.select_accounts_btn.clicked.connect(self.select_accounts)
+        self.delete_btn.clicked.connect(self.delete_widget)
+
+        if self.instruction != None:
+            self.set_default_values()
+
+    def select_accounts(self):
+        dlg = Select_Account_Dialog(self.test.accounts, self.test.rols, self.instruction_accounts)
+
+        if dlg.exec():
+            self.instruction_accounts = dlg.get_selected_accounts_indexes()
+            self.is_defined = True
+        else:
+            pass
+
+    def set_default_values(self):
+        
+        self.instruction_accounts = self.instruction.accounts
+        self.iterations = self.instruction.number_of_executions
+        self.time_interval = self.instruction.time_interval
+        self.is_defined = True
+
+    def delete_widget(self):
+        parent_layout = self.parent().layout()
+        parent_layout.removeWidget(self)
+        self.deleteLater()
+        del self
+
+    def get_instruction(self):
+        if self.is_defined == False:
+            raise Exception
+
+        version = ""
+        contract = ""
+        function_name = ""
+        exec_n = self.iterations.value()
+        time_interval = self.time_interval.value()
+
+        return Instruction(contract, version, function_name, exec_n, [], self.msg_values, self.prev_output_key, time_interval, self.instruction_accounts)
+
+    
+        
 
 
 

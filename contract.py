@@ -106,6 +106,9 @@ class Contract:
         self.bytecode = bytecode
         self.address = {}
 
+    def __str__(self):
+        return f"{self.name}"
+
     def _sign_and_send_tx(self, tx, account, w3):
         signed_tx = account.sign_transaction(w3, tx)
         tx_hash = w3.eth.send_raw_transaction(signed_tx.rawTransaction)  
