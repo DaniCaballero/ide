@@ -528,15 +528,18 @@ class Test_Dialog(QDialog):
         self.run_test_btn.clicked.connect(self.run_test)
         self.create_test_btn.clicked.connect(self.create_test)
 
-        qcombobox = """QComboBox {border: 1px solid #ced4da; border-radius: 4px;padding-left: 10px;background-color: #f2f5ff} QComboBox::drop-down {border: none} QComboBox::down-arrow {image: url(./down.png); width: 12px; height: 12px; margin-right: 15px}
-                    QPushButton {border-radius: 4px} #Dialog {background-color: white}"""
-                    
+        # qcombobox = """QComboBox {border: 1px solid #ced4da; border-radius: 4px;padding-left: 10px;background-color: #f2f5ff} QComboBox::drop-down {border: none} QComboBox::down-arrow {image: url(./down.png); width: 12px; height: 12px; margin-right: 15px}
+        #             QPushButton {border-radius: 4px} #Dialog {background-color: white}"""
 
+        with open("test_dialogs.qss", "r") as f:
+            _styles = f.read()
+            self.setStyleSheet(_styles)
+                    
         self.scroll_widget_layout = QVBoxLayout()
         self.scroll_widget_layout.setAlignment(Qt.AlignmentFlag.AlignTop)
         self.scroll_widget.setLayout(self.scroll_widget_layout)
 
-        self.setStyleSheet(qcombobox)
+        #self.setStyleSheet(qcombobox)
 
         #self.test = Test(name=test_name)
 

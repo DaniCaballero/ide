@@ -1,5 +1,6 @@
 import web3
 import re
+import yaml
 
 
 def get_substrings(string):
@@ -44,43 +45,57 @@ def find_replace_split(string):
         string_list[index] = sublist
 
     return string_list
+
+def toBool(bool_arg):
+    if bool_arg == True or bool_arg == "True":
+        return True
     
+    elif bool_arg == False or bool_arg == "False":
+        return False
+    
+    else:
+        raise Exception
 
-TYPE_CAST = {"uint" : web3.Web3.toInt, "bytes" : web3.Web3.toBytes, "address" : web3.Web3.toChecksumAddress}
+TYPE_CAST = {"uint" : web3.Web3.toInt, "bytes" : web3.Web3.toBytes, "address" : web3.Web3.toChecksumAddress,
+             "int" : web3.Web3.toInt, "bool" : toBool, "string" : str}
 
-def cast_web3_helper(arg_type, args, list_bool, temp):
+def cast_arg_to_solidity_type(arg, arg_type):
+    try:
+        if arg_type == "bytes":
+            if type(arg).__name__ == "str":
+                arg = TYPE_CAST[arg_type](hexstr=arg)
+            else:
+                arg = TYPE_CAST[arg_type](arg)
+        elif arg_type in ["string", "bool", "address"]:
+            arg = TYPE_CAST[arg_type](arg)
+        else:
+            arg = TYPE_CAST[arg_type](text=arg)
+    except:
+        pass
+
+    return arg
+
+def cast_web3_helper(arg_type, args, dim, temp):
     '''This function extracts base argument type and converts the arguments to their appropiate solidity type.
     In case an argument is a list, all of its elements are converted. '''
-    arg_type_tmp = re.sub('\d', '', arg_type)
+    arg_type = re.sub('\d', '', arg_type)
 
-    if arg_type_tmp in TYPE_CAST.keys():
-        if list_bool:
-            if arg_type_tmp == "address":
-                args = [TYPE_CAST[arg_type_tmp](i) for i in args]
-                temp.append(args)
-            elif arg_type_tmp == "bytes":
-                try:
-                    args = [arg.hex() for arg in args]
-                except:
-                    pass
-                args = [TYPE_CAST[arg_type_tmp](hexstr=i) for i in args]
-                temp.append(args)
-            else:
-                args = [TYPE_CAST[arg_type_tmp](text=i) for i in args]
-                temp.append(args)
+    if arg_type in TYPE_CAST.keys():
+        if dim > 0:
+            cast_list(args, dim, arg_type)
         else:
-            if arg_type_tmp == "address":
-                temp.append(TYPE_CAST[arg_type_tmp](args))
-            elif arg_type_tmp == "bytes":
-                try:
-                    args = args.hex()
-                except:
-                    pass
-                temp.append(TYPE_CAST[arg_type_tmp](hexstr=args))
-            else:
-                temp.append(TYPE_CAST[arg_type_tmp](text=args))
+            args = cast_arg_to_solidity_type(args, arg_type)
+
+    temp.append(args)
+
+def cast_list(arg_list, dim, type):
+    if dim == 1:
+        for i in range(len(arg_list)):
+            arg_list[i] = cast_arg_to_solidity_type(arg_list[i], type)
     else:
-        temp.append(args)
+        for list in arg_list:
+            cast_list(list, dim - 1, type)
+
 
 def cast_web3_types(type_list, args_list):
     '''This function splits argument type in case is a list and splits its respective
@@ -90,12 +105,18 @@ def cast_web3_types(type_list, args_list):
 
     for arg_type, arg in zip(type_list, args_list):
         if arg_type.endswith("[]"):
-            arg_type_tmp = arg_type.split("[]")[0]
-            arg_list = arg.strip("][").split(',')
+            arg_type_tmp = arg_type.split("[]")
+            arg_type = arg_type_tmp[0]
+            dim = len(arg_type_tmp) - 1
+            #arg_list = arg.strip("][").split(',')
+            if type(arg).__name__ == "str":
+                arg = yaml.load(arg, Loader=yaml.FullLoader)
 
-            cast_web3_helper(arg_type_tmp, arg_list, True, temp)
+            cast_web3_helper(arg_type, arg, dim, temp)
         else:
-            cast_web3_helper(arg_type, arg, False, temp)
+            cast_web3_helper(arg_type, arg, 0, temp)
+
+    print("casted args", temp)
 
     return temp
 

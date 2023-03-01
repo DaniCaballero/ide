@@ -5,6 +5,23 @@ from geth_nodes import init_geth_nodes, connect_nodes
 from network import Local_Network
 from web3 import Web3, datastructures, middleware
 
+class CustomThread(threading.Thread):
+    '''Custom class that saves any exception occured during thread execution and reraises it 
+    when thread is joined'''
+    def run(self):
+        self.exc = None
+
+        try:
+            self._target(*(self._args))
+        except Exception as e:
+            self.exc = e
+
+    def join(self):
+        threading.Thread.join(self)
+
+        if self.exc:
+            raise self.exc
+
 
 def set_miner_info(miner, test_path):
     with open(os.path.join(test_path,"key.txt"), "w") as f:
@@ -26,6 +43,7 @@ class Test:
         self.inst_count = 0
         self.results = []
         self.prev_outputs = {}
+        self.first_instruction = True
         self.error = False
 
     def __str__(self):
@@ -35,7 +53,7 @@ class Test:
         data = []
         
         for arg in args:
-            #tmp_data = arg.generate_data(iters)
+
             tmp_data = arg.data
             print("data ", tmp_data)
 
@@ -43,6 +61,7 @@ class Test:
                 tmp_data = [Web3.toWei(decimal.Decimal(data), arg.type) for data in tmp_data]
 
             if arg.__class__.__name__ == "Prev_Output":
+                # Data obtained in runtime
                 tmp_data = self.prev_outputs[arg.output_dict_name]
 
             data.append(tmp_data)
@@ -50,17 +69,14 @@ class Test:
         return data
 
     def add_entry_to_results(self, node_port, contract_name, account_address, function_name, args, return_bool, return_value):
-        return_str = ""
 
-        if return_bool:
-            if type(return_value) == datastructures.AttributeDict:
-                return_str = return_value["transactionHash"].hex() 
-            else:
-                return_str = return_value
+        if type(return_value) == datastructures.AttributeDict:
+            return_value = return_value["transactionHash"].hex() 
+ 
         else:
-            return_str = return_value
+            return_value = str(return_value)
             
-        row = [str(node_port),contract_name, account_address, function_name, f"{args}", return_str]
+        row = [str(node_port),contract_name, account_address, function_name, f"{args}", return_value]
         self.results.append(row)
 
     def generate_results_csv(self):
@@ -88,10 +104,14 @@ class Test:
         self.rols[name] = Rol(name, idxs)
         
     def _divide_load(self, args, n_iter, nc):
+ 
+        # limit number of threads to amount of iterations, if necessary
         if n_iter < nc:
-            # limitamos el numero de hilos a la cantidad de iteraciones, si es necesario
             nc = n_iter
 
+        # every thread has a list with 2 elements in it. First element is an integer that represents
+        # how many iterations are assigned to that thread. Second argument is a list and its elements
+        # represent the index where the thread will start reading its own arguments
         data = [[0,[0 for j in range(len(args))]] for i in range(nc)]
 
         for i in range(nc):
@@ -126,11 +146,19 @@ class Test:
 
     def _thread_send_transactions(self, time_interval, contract, function_name, prev_output_key, th_args_index, args):
         n_iter = th_args_index[0]
+        return_bool, return_value = True, ""
         start_time = time.time()
-        return_bool, return_value = False, ""
 
         for i in range(n_iter):
             node = random.choice(self.nodes)
+
+            if self.inst_count == 0:
+                lock.acquire()
+                if self.first_instruction == True:
+                    node = self.nodes[0]
+                    self.first_instruction = False
+                lock.release()
+
             w3 = node.connect_to_node()
             #w3.middleware_onion.add(middleware.pythonic.pythonic_middleware)
 
@@ -138,11 +166,8 @@ class Test:
 
             if contract == "":
                 return_value = w3.eth.getBalance(account.address)
-                return_bool = True
             else:
                 if function_name == "constructor":
-                    node = self.nodes[0]
-                    w3 = node.connect_to_node()
                     return_bool, return_value = contract.deploy(node, w3, account, args_row, msg_value)
                 else:
                     return_bool, return_value = contract.contract_interaction(node, w3, account, function_name, args_row, msg_value)
@@ -197,7 +222,7 @@ class Test:
                 args = [accounts] +self._get_args([instruction.msg_values]) +self._get_args(instruction.args)
                 threads_args_index = self._divide_load(args, instruction.number_of_executions, self.concurrency_number)
 
-                threads = [threading.Thread(target=self._thread_send_transactions, args=(instruction.time_interval,
+                threads = [CustomThread(target=self._thread_send_transactions, args=(instruction.time_interval,
                             instruction.contract, instruction.function_name, instruction.prev_output_key, th_args, args,)) for th_args in threads_args_index]
 
                 # Start threads
@@ -216,8 +241,6 @@ class Test:
             self.add_entry_to_results("", "", "", "", "", "", e)
             self.generate_results_csv()
             self.end_geth_processes(pids)
-
-
 
 class Rol:
     def __init__(self, name, idx : list):
