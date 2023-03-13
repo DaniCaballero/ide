@@ -1,6 +1,6 @@
 from PyQt6.QtWidgets import (QDialog, QDialogButtonBox, QVBoxLayout, QLabel, QComboBox, QLineEdit, QWidget,
                              QHBoxLayout, QFrame, QToolButton, QPushButton, QTreeView, QSizePolicy, QFileDialog, 
-                             QErrorMessage, QGraphicsDropShadowEffect, QCheckBox, QDoubleSpinBox, QMenu, QListView)
+                             QErrorMessage, QGraphicsDropShadowEffect, QCheckBox, QDoubleSpinBox, QMenu, QListView, QApplication)
 from PyQt6.QtGui import QPalette, QColor, QIcon, QFileSystemModel, QRgba64, QDragEnterEvent, QDragLeaveEvent
 from PyQt6.QtCore import QSize, Qt, QDir, pyqtSignal, QThread, QItemSelectionModel
 from PyQt6 import uic, QtWidgets
@@ -294,10 +294,15 @@ class Functions_Layout(QWidget):
         select_account_label = QLabel("Account:")
         self.select_account = QComboBox(self)
         self.select_account.setMinimumWidth(self.width())
+
+        self.copy_account_btn = QPushButton()
+        self.copy_account_btn.setIcon(QIcon("./copy.png"))
+        self.copy_account_btn.clicked.connect(self.copy_account)
         #self.select_account.addItems(self.app.accounts.keys())
         #add_widgets_to_layout(select_layout, [select_account_label, self.select_account])
         select_layout.addWidget(select_account_label, 30)
-        select_layout.addWidget(self.select_account, 70)
+        select_layout.addWidget(self.select_account, 60)
+        select_layout.addWidget(self.copy_account_btn, 10)
         select_layout.setContentsMargins(10,0,10,0)
 
         ether_layout = QHBoxLayout()
@@ -322,6 +327,9 @@ class Functions_Layout(QWidget):
         self.layout.addSpacing(70)
         self.layout.setContentsMargins(0,0,0,0)
         self.setLayout(self.layout)
+
+    def copy_account(self):
+        QApplication.clipboard().setText(self.select_account.currentText())
 
     def update_networks(self):
         self.select_network.clear()
