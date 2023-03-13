@@ -4,6 +4,7 @@ from account import Account, Test_Account
 from geth_nodes import init_geth_nodes, connect_nodes
 from network import Local_Network
 from web3 import Web3, datastructures, middleware
+from contract import find_replace_split
 
 class CustomThread(threading.Thread):
     '''Custom class that saves any exception occured during thread execution and reraises it 
@@ -203,7 +204,7 @@ class Test:
         connect_nodes(http_ports)
         time.sleep(5)
 
-        self.nodes = [Local_Network("geth", "", 1325, port) for port in http_ports]
+        self.nodes = [Local_Network(f"geth-{self.name}", "", 1325, port) for port in http_ports]
 
         return pids
 
@@ -259,7 +260,6 @@ class Instruction:
         self.args = args
         self.msg_values = msg_values
         self.prev_output_key = prev_output_key
-        
 
     def __str__(self):
         return f"{self.function_name}, {self.number_of_executions}"
@@ -332,6 +332,17 @@ class File(Argument):
 
         self.data = list(df[self.name])
         #print("DATOS", self.data)
+        return self.data
+    
+class List_Arg(Argument):
+    def __init__(self, text, name = "", type = ""):
+        super().__init__(name, type)
+
+        self.text = text
+
+    def generate_data(self, iterations):
+        self.data = find_replace_split(self.text)
+
         return self.data
 
 

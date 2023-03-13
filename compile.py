@@ -149,6 +149,8 @@ def compile_contract(state, version, file_name, overwrite):
             except:
                 state.contracts[f"{contract_name}-{file_name}"] = [contract]
 
+    state.save_to_json()
+
     return compiled_sol
 
 def compile(compile_all, state, file_name, overwrite):

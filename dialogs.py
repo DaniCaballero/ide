@@ -4,12 +4,12 @@ from PyQt6.QtWidgets import (QDialog, QDialogButtonBox, QVBoxLayout, QLabel, QCo
 from PyQt6.QtGui import QPalette, QColor, QIcon, QFileSystemModel, QRgba64, QDragEnterEvent, QDragLeaveEvent
 from PyQt6.QtCore import QSize, Qt, QDir, pyqtSignal, QThread, QItemSelectionModel
 from PyQt6 import uic, QtWidgets
-import os, threading, decimal, shutil, pickle, copy
+import os, threading, decimal, shutil, pickle, copy, json
 from pathlib import Path
 from collapsible import CollapsibleBox
 from contract import find_replace_split
 from project import Editor, Select_Accounts_Model
-from test import Sequence, Random, File, Prev_Output, Test, Instruction, Worker
+from test import Sequence, Random, File, Prev_Output, Test, Instruction, Worker, List_Arg
 from web3 import Web3
 
 
@@ -293,6 +293,7 @@ class Functions_Layout(QWidget):
         select_layout = QHBoxLayout()
         select_account_label = QLabel("Account:")
         self.select_account = QComboBox(self)
+        self.select_account.setMinimumWidth(self.width())
         #self.select_account.addItems(self.app.accounts.keys())
         #add_widgets_to_layout(select_layout, [select_account_label, self.select_account])
         select_layout.addWidget(select_account_label, 30)
@@ -379,6 +380,14 @@ class Functions_Layout(QWidget):
         #threading.Thread(target=contract_interaction, args=(network, w3, account,*args,)).start()
         _, result = contract.contract_interaction(network, w3, account, *args, msg_value)
 
+        print("type of result ", type(result).__name__)
+
+        if type(result).__name__ == 'AttributeDict':
+            result = Web3.toJSON(result)
+            result = json.loads(result)
+            result = json.dumps(result, indent=1)
+            print(result)
+
         self.function_signal.emit(str(result))
 
 class Project_Widget(QWidget):
@@ -432,7 +441,6 @@ class Project_Widget(QWidget):
         path = self.model.filePath(index)
         p = Path(path)
         self.parent.add_new_tab(p)
-
 
 class IPFS_Token_Dialog(QDialog):
     def __init__(self, parent=None):
@@ -658,32 +666,25 @@ class Select_Instruction(QDialog):
         self.buttonBox.button(QDialogButtonBox.StandardButton.Ok).setEnabled(True)
 
 class Argument_Dialog(QDialog):
-    def __init__(self, prev_output_dict, arg = None):
+    def __init__(self, ui_file_name, prev_output_dict, arg = None):
         super().__init__()
-        uic.loadUi("./ui/Argument_Dialog.ui", self)
+        uic.loadUi(f"./ui/{ui_file_name}", self)
         self.current_toggled = None
         self.arg = arg
 
-        self.max_columns = {"File:" : [0, 2, 2] , "Sequence:" : [1, 4, 2], "Random:" : [2,3, 2], "Previous Output:" : [3,2, 1]}
+        self.max_columns = {"File:" : [0, 2, 2] , "Sequence:" : [4, 4, 2], "Random:" : [3, 3, 2], "Previous Output:" : [1, 2, 1], "List:" : [2, 2, 1]}
 
         self.buttonBox.button(QDialogButtonBox.StandardButton.Ok).setEnabled(False)
 
         self.radioButton.toggled.connect(lambda : self.disable_enable_children(self.radioButton.text()))
         self.radioButton.toggled.connect(self.validate_row_1)
-        self.radioButton_2.toggled.connect(lambda : self.disable_enable_children(self.radioButton_2.text()))
-        self.radioButton_2.toggled.connect(self.validate_row_2)
-        self.radioButton_3.toggled.connect(lambda : self.disable_enable_children(self.radioButton_3.text()))
-        self.radioButton_3.toggled.connect(self.validate_row_3)
+
         self.radioButton_4.toggled.connect(lambda : self.disable_enable_children(self.radioButton_4.text()))
         self.radioButton_4.toggled.connect(self.validate_row_4)
+        self.radioButton_5.toggled.connect(lambda : self.disable_enable_children(self.radioButton_5.text()))
+        self.radioButton_5.toggled.connect(self.validate_row_5)
 
         self.lineEdit.textChanged.connect(self.validate_row_1)
-
-        self.spinBox.valueChanged.connect(self.validate_row_2)
-        self.spinBox_2.valueChanged.connect(self.validate_row_2)
-
-        self.spinBox_4.valueChanged.connect(self.validate_row_3)
-        self.spinBox_5.valueChanged.connect(self.validate_row_3)
         
         self.pushButton.clicked.connect(self.get_path)
 
@@ -700,19 +701,11 @@ class Argument_Dialog(QDialog):
             self.radioButton.setChecked(True)
             self.lineEdit.setText(self.arg.path)
 
-        elif class_name == "Sequence":
-            self.radioButton_2.setChecked(True)
-            self.spinBox.setValue(self.arg.min)
-            self.spinBox_2.setValue(self.arg.max)
-            self.spinBox_3.setValue(self.arg.step)
-
-        elif class_name == "Random":
-            self.radioButton_3.setChecked(True)
-            self.spinBox_4.setValue(self.arg.min)
-            self.spinBox_5.setValue(self.arg.max)
-
         elif class_name == "Prev_Output":
             self.select_prev_output.setText(self.arg.output_dict_name)
+
+        elif class_name == "List_Arg":
+            self.lineEdit_2.setText(self.arg.text)
 
     def get_path(self):
         path, _ = QFileDialog.getOpenFileName(self, "Open File", "", "All files (*)")
@@ -742,6 +735,73 @@ class Argument_Dialog(QDialog):
         else:
             self.buttonBox.button(QDialogButtonBox.StandardButton.Ok).setEnabled(False)
 
+    def validate_row_4(self):
+
+        if self.select_prev_output.currentText() != "":
+            self.buttonBox.button(QDialogButtonBox.StandardButton.Ok).setEnabled(True)
+        else:
+            self.buttonBox.button(QDialogButtonBox.StandardButton.Ok).setEnabled(False)
+
+    def validate_row_5(self):
+        
+        if self.lineEdit_2.text() != "":
+            self.buttonBox.button(QDialogButtonBox.StandardButton.Ok).setEnabled(True)
+        else:
+            self.buttonBox.button(QDialogButtonBox.StandardButton.Ok).setEnabled(False)  
+
+
+    def get_checked_button_values(self):
+
+        if self.radioButton.isChecked():
+            path = self.lineEdit.text() #trim probablemente. check if is path
+
+            return File(file_path=path)
+        
+        elif self.radioButton_4.isChecked():
+            key_name = self.select_prev_output.currentText()
+
+            return Prev_Output(key_name)
+        
+        elif self.radioButton_5.isChecked():
+            text = self.lineEdit_2.text()
+
+            return List_Arg(text)
+        
+        else:
+            print("upss")
+
+class Argument_Dialog_Int(Argument_Dialog):
+    def __init__(self, ui_file_name, prev_output_dict, arg = None):
+        super().__init__(ui_file_name, prev_output_dict, arg)
+
+        self.radioButton_2.toggled.connect(lambda : self.disable_enable_children(self.radioButton_2.text()))
+        self.radioButton_2.toggled.connect(self.validate_row_2)
+        self.radioButton_3.toggled.connect(lambda : self.disable_enable_children(self.radioButton_3.text()))
+        self.radioButton_3.toggled.connect(self.validate_row_3)
+
+        self.spinBox.valueChanged.connect(self.validate_row_2)
+        self.spinBox_2.valueChanged.connect(self.validate_row_2)
+
+        self.spinBox_4.valueChanged.connect(self.validate_row_3)
+        self.spinBox_5.valueChanged.connect(self.validate_row_3)
+
+    def set_default_values(self):
+        class_name = type(self.arg).__name__
+
+        if class_name == "Sequence":
+            self.radioButton_2.setChecked(True)
+            self.spinBox.setValue(self.arg.min)
+            self.spinBox_2.setValue(self.arg.max)
+            self.spinBox_3.setValue(self.arg.step)
+
+        elif class_name == "Random":
+            self.radioButton_3.setChecked(True)
+            self.spinBox_4.setValue(self.arg.min)
+            self.spinBox_5.setValue(self.arg.max)
+        
+        else:
+            return super().set_default_values()
+
     def validate_row_2(self):
 
         if self.spinBox_2.value() >= self.spinBox.value():
@@ -756,42 +816,24 @@ class Argument_Dialog(QDialog):
         else:
             self.buttonBox.button(QDialogButtonBox.StandardButton.Ok).setEnabled(False)
 
-    def validate_row_4(self):
-
-        if self.select_prev_output.currentText() != "":
-            self.buttonBox.button(QDialogButtonBox.StandardButton.Ok).setEnabled(True)
-        else:
-            self.buttonBox.button(QDialogButtonBox.StandardButton.Ok).setEnabled(False)
-
-
     def get_checked_button_values(self):
 
-        if self.radioButton.isChecked():
-            path = self.lineEdit.text() #trim probablemente. check if is path
-
-            return File(file_path=path)
-
-        elif self.radioButton_2.isChecked():
+        if self.radioButton_2.isChecked():
             start = self.spinBox.value()
             end = self.spinBox_2.value()
             step = self.spinBox_3.value()
 
             return Sequence(start, end, step=step)
             
-
         elif self.radioButton_3.isChecked():
             start = self.spinBox_4.value()
             end = self.spinBox_5.value()
 
             return Random(start, end)
         
-        elif self.radioButton_4.isChecked():
-            key_name = self.select_prev_output.currentText()
-
-            return Prev_Output(key_name)
-        
         else:
-            print("upss")
+            return super().get_checked_button_values()
+
 
 class Select_Ether_Dialog(Argument_Dialog):
     def __init__(self, arg = None):
@@ -955,7 +997,8 @@ class Argument_Widget_v2(QWidget):
 
 
     def select_args(self):
-        dlg = Argument_Dialog(self.test.prev_outputs, self.arg)
+        class_name, ui_file_name = self.get_ui_file_name()
+        dlg = class_name(ui_file_name, self.test.prev_outputs, self.arg)
 
         if dlg.exec():
             self.arg = dlg.get_checked_button_values()
@@ -964,6 +1007,16 @@ class Argument_Widget_v2(QWidget):
             print(self.arg)
         else:
             print("NOOOO")
+
+    def get_ui_file_name(self):
+        class_name, ui_file_name = Argument_Dialog,"Argument_Dialog_Base.ui"
+
+        if "[" not in self.arg_type:
+            if "int" in self.arg_type:
+                ui_file_name = "Argument_Dialog_Alt.ui"
+                class_name = Argument_Dialog_Int
+
+        return class_name, ui_file_name
 
 class List_Arguments_Dialog(QDialog):
     def __init__(self, args, accounts, rols, test, instruction=None):
@@ -1326,7 +1379,12 @@ class Instruction_Balance_Widget(QWidget):
 
         return Instruction(contract, version, function_name, exec_n, [], self.msg_values, self.prev_output_key, time_interval, self.instruction_accounts)
 
-    
+class Select_Script(QDialog):
+    def __init__(self, scripts):
+        super().__init__()
+        uic.loadUi("./ui/Select_Script_Dlg.ui", self)
+
+        self.comboBox.addItems(scripts) 
         
 
 

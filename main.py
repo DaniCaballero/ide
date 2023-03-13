@@ -3,14 +3,14 @@ from PyQt6.QtWidgets import (QApplication, QWidget, QMainWindow, QLabel, QLineEd
                             QTabWidget, QStackedLayout, QFrame, QToolButton, QSplitter, QStyleFactory, QMessageBox, QErrorMessage)
 from menu_functions import *
 from dialogs import (Compile_Dialog, Add_Account_Dialog, Add_Node_Dialog, Deploy_Dialog, IPFS_Token_Dialog, Functions_Layout, 
-                    Project_Widget, Left_Widget, Test_Dialog, Create_Project_Dialog, Manage_Test, Add_Files_IPFS)
+                    Project_Widget, Left_Widget, Test_Dialog, Create_Project_Dialog, Manage_Test, Add_Files_IPFS, Select_Script)
 from account import Account, add_local_accounts
 from network import Network, init_ganache
 from ipfs import IPFS
 from interact import contract_interaction
 from project import Editor, Project
 from PyQt6.QtGui import QAction, QColor, QPalette, QIcon, QFont, QFontDatabase
-import os, signal, psutil, sys, pickle, time
+import os, subprocess, psutil, sys, pickle, time, json
 
 class MainWindow(QMainWindow):
     def __init__(self):
@@ -98,6 +98,7 @@ class MainWindow(QMainWindow):
         create_menu_option("IPFS", ["Add Token ID", "Add file"], [lambda_func(add_token_id, self), self.add_to_ipfs], ["",""], menu, self)
         create_menu_option("Deploy", ["Deploy contract"], [lambda_func(deploy_contract, self)], [""], menu, self)
         create_menu_option("Tests", ["Create Test"], [self.create_test], [""], menu, self)
+        create_menu_option("Run", ["Select Script", "Run Active File"], [self.run_script], ["", ""], menu, self)
         
 
     def project_button_clicked(self):
@@ -126,6 +127,9 @@ class MainWindow(QMainWindow):
                 add_local_accounts(self)
                 self.functions_widget.update_networks()
 
+                with open("./current_project_path.txt", "w") as f:
+                    f.write(path)
+
                 #self.output.append(f"Project initialized at {path}\n")
                 self.statusBar().showMessage(f"Project initialized at {path}", 2000)
             except:
@@ -149,6 +153,9 @@ class MainWindow(QMainWindow):
                 add_local_accounts(self)
 
                 self.functions_widget.update_networks()
+                
+                with open("./current_project_path.txt", "w") as f:
+                    f.write(path)
 
                 #self.output.append(f"Project found at {path}\n")
                 self.statusBar().showMessage(f"Project found at {path}", 2000)
@@ -172,7 +179,7 @@ class MainWindow(QMainWindow):
             return b'\0' in f.read(1024)
 
     def new_file(self):
-        editor = Editor(self.font_families)
+        editor = Editor(font_families=self.font_families)
         self.editor_tab.addTab(editor, editor.file_name)
 
     def open_file(self): 
@@ -188,6 +195,7 @@ class MainWindow(QMainWindow):
         if path == "":
             self.save_as()
         else:
+            print("path ", path)
             path.write_text(editor.text().replace("\r\n", "\n"))
             self.statusBar().showMessage(f"Saved file at {path}", 2000)
 
@@ -253,6 +261,41 @@ class MainWindow(QMainWindow):
         else:
             print("WAINS")
 
+    def run_script(self):
+        path = os.path.join(self.project.path, "scripts")
+        print("listdir of path", os.listdir(path))
+        files = [file_name for file_name in os.listdir(path) if os.path.isfile(os.path.join(self.project.path, "scripts", file_name)) == True]
+
+        print("scripts", files)
+
+        dlg = Select_Script(files)
+
+        if dlg.exec():
+            selected_file = dlg.comboBox.currentText()
+            #load_objs_path = os.path.join(os.getcwd(), "py_loader")
+            load_objs_path = os.getcwd()
+            print("load_path", f"'{load_objs_path}'")
+
+            origin_path = os.path.join(self.project.path, "scripts", selected_file)
+            tmp_path = os.path.join(".", selected_file)
+
+            injected_lines = ["import sys\n", f"sys.path.insert(0, r'{load_objs_path}')\n"]
+
+            #shutil.copyfile(origin_path, tmp_path)
+
+            with open(origin_path, "r") as f:
+                content = f.readlines()
+
+            new_content = injected_lines + content
+
+            with open(tmp_path, "w") as f:
+                f.writelines(new_content)
+
+            subprocess.Popen(["python", tmp_path])
+            
+             
+
+
     def add_to_ipfs(self):
         dlg = Add_Files_IPFS(self.project.path)
 
@@ -290,6 +333,30 @@ class MainWindow(QMainWindow):
 
         with open(os.path.join(path, "data.pkl"), "wb") as f:
             pickle.dump(data, f)
+
+    def save_to_json(self):
+        '''Saves contract information to json to be able to retrieve objs from a python/js script'''
+        tmp = {}
+        json_path = os.path.join(self.project.path, "contracts.json")
+
+        for key, values in self.contracts.items():
+            tmp[key] = [contract.__dict__ for contract in values]
+
+        with open(json_path, "w") as f:
+            json.dump(tmp, f)
+
+    def retrieve_from_json(self):
+        '''Reassigns address attribute of contract after script execution, in orden to remain synced. Doesn't 
+        create new instance of contract objects so references aren't lost'''
+        json_path = os.path.join(self.project.path, "contracts.json")
+
+        with open(json_path, "r") as f:
+            contracts_json = json.load(f)
+        
+        for key, values in self.contracts.items():
+            for i in range(len(values)):
+                self.contracts[key][i].address = contracts_json[key][i]["address"]
+
 
     def closeEvent(self, event):
         self.save_data()
