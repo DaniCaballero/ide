@@ -25,84 +25,6 @@ def create_menu_option(option_name, label_list, command_list, shortcut_list, men
 def lambda_func(function_name, *arguments):
     return lambda : function_name(*arguments)
 
-# def init_project(state):
-#     project = state.project
-#     path = QFileDialog.getExistingDirectory(state, "Select Directory")
-#     if path != "":
-#         project.path = path
-#         project.init_project()
-#         state.output.append(f"Project initialized at {path}\n")
-                        
-#         init_ganache(state)
-
-# def open_project(state):
-#     project = state.project
-#     path = QFileDialog.getExistingDirectory(state, "Select Directory")
-#     is_project = project.exists_project(path)
-#     if is_project:
-#         project.path = path
-#         state.output.append(f"Project found at {path}\n")
-#         state.project_widget.add_project(state, path)
-
-#         init_ganache(state)
-#         add_local_accounts(state)
-#         state.functions_widget.update_networks()
-
-# def delete_project(state):
-#     path = QFileDialog.getExistingDirectory(state, "Select Directory")
-#     project = Project(path)
-#     project.delete_project()
-
-# def new_file(state):
-#     editor = Editor()
-#     state.editor_tab.addTab(editor, editor.file_name)
-
-# def add_new_tab(state, path):
-#     with open(path, 'r') as file:
-#         code = file.read()
-#         editor = Editor()
-#         editor.setPlainText(code)
-#         editor.file_path = path
-#         editor.file_name = Path(path).name
-#         state.editor_tab.addTab(editor, editor.file_name)
-
-
-# def open_file(state, path=""):
-#     if path == "":
-#         path, _ = QFileDialog.getOpenFileName(state, "Open File", "", "All files (*)")
-#         if path != "":
-#             add_new_tab(state, path)
-#     else:
-#         add_new_tab(state, path)
-
-# def save(state):
-#     editor = state.editor_tab.currentWidget()
-#     path = editor.file_path
-
-#     if path == "":
-#         save_as(state)
-#     else:
-#         with open(path, 'w') as file:
-#             code = editor.toPlainText()
-#             file.write(code)
-    
-# def save_as(state):
-#     editor = state.editor_tab.currentWidget()
-#     path, _ = QFileDialog.getSaveFileName(state, "Open File", "", "All files (*)")
-
-#     if path != "":
-#         with open(path, 'w') as file:
-#             print(path)
-#             code = editor.toPlainText()
-#             file.write(code)
-#             editor.file_path = path
-#             editor.file_name = Path(path).name
-#             state.editor_tab.setTabText(state.editor_tab.currentIndex(),editor.file_name)
-
-# def close_file(state):
-#     index = state.editor_tab.currentIndex()
-#     save(state)
-#     state.editor_tab.removeTab(index)
 
 def compile_file(state):
     dlg = Compile_Dialog()
@@ -141,6 +63,8 @@ def add_account(state):
             
         state.output.append(f'Account "{acc.alias}" added\n')
 
+        state.save_to_json()
+
 def generate_account(state):
     pass
 
@@ -153,6 +77,8 @@ def add_node_provider(state):
         state.networks[network_name] = net
         state.output.append(f'Node provider for "{network_name} network" added\n')
         state.functions_widget.update_networks()
+
+        state.save_to_json()
 
 def deploy_contract(state):
     dlg = Deploy_Dialog(state)
@@ -191,6 +117,8 @@ def deploy_contract(state):
             state.add_to_output(tx_receipt.contractAddress)
             # chequear si el thread finalizo bien primero
             state.functions_widget.insert_function(state, contract)
+
+            state.save_to_json()
         except Exception as e:
             print(e)
 
@@ -201,17 +129,4 @@ def add_token_id(state):
         ipfs = IPFS(token_id)
         state.ipfs = ipfs
         state.output.append(f"Web3Storage token id added")
-
-# def add_file_to_ipfs(state):
-#     path, _ = QFileDialog.getOpenFileName(state, "Open File", "", "All files (*)")
-#     if path != "":
-#         print(path)
-#         #state.ipfs.add_file(path)
-#         threading.Thread(target=state.ipfs.add_file, args=(state, path)).start()
-
-
-
-        
-
-
 

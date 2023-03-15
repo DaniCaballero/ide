@@ -56,10 +56,13 @@ class Test:
         for arg in args:
 
             tmp_data = arg.data
-            print("data ", tmp_data)
+            #print("data ", tmp_data)
 
             if arg.name == "ether denomination":
                 tmp_data = [Web3.toWei(decimal.Decimal(data), arg.type) for data in tmp_data]
+
+            if arg.type == "address":
+                tmp_data = [self.accounts[i].address for i in tmp_data]
 
             if arg.__class__.__name__ == "Prev_Output":
                 # Data obtained in runtime

@@ -57,7 +57,7 @@
           <item>
            <layout class="QHBoxLayout" name="horizontalLayout_2">
             <item>
-             <widget class="QPushButton" name="pushButton_2">
+             <widget class="QPushButton" name="add_accounts_btn">
               <property name="text">
                <string>Add Existing Account</string>
               </property>

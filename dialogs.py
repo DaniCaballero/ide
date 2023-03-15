@@ -9,7 +9,7 @@ from pathlib import Path
 from collapsible import CollapsibleBox
 from contract import find_replace_split
 from project import Editor, Select_Accounts_Model
-from test import Sequence, Random, File, Prev_Output, Test, Instruction, Worker, List_Arg
+from test import Sequence, Random, File, Prev_Output, Test, Instruction, Worker, List_Arg, Argument
 from web3 import Web3
 
 
@@ -674,13 +674,13 @@ class Select_Instruction(QDialog):
         self.buttonBox.button(QDialogButtonBox.StandardButton.Ok).setEnabled(True)
 
 class Argument_Dialog(QDialog):
-    def __init__(self, ui_file_name, prev_output_dict, arg = None):
+    def __init__(self, ui_file_name, test, arg = None):
         super().__init__()
         uic.loadUi(f"./ui/{ui_file_name}", self)
         self.current_toggled = None
         self.arg = arg
 
-        self.max_columns = {"File:" : [0, 2, 2] , "Sequence:" : [4, 4, 2], "Random:" : [3, 3, 2], "Previous Output:" : [1, 2, 1], "List:" : [2, 2, 1]}
+        self.max_columns = {"File:" : [0, 2, 2] , "Sequence:" : [4, 4, 2], "Random:" : [3, 3, 2], "Previous Output:" : [1, 2, 1], "List:" : [2, 2, 1], "Accounts:" : [3,2,1]}
 
         self.buttonBox.button(QDialogButtonBox.StandardButton.Ok).setEnabled(False)
 
@@ -696,7 +696,7 @@ class Argument_Dialog(QDialog):
         
         self.pushButton.clicked.connect(self.get_path)
 
-        self.select_prev_output.addItems(list(prev_output_dict.keys()))
+        self.select_prev_output.addItems(list(test.prev_outputs.keys()))
 
         if self.arg != None:
             self.set_default_values()
@@ -779,8 +779,8 @@ class Argument_Dialog(QDialog):
             print("upss")
 
 class Argument_Dialog_Int(Argument_Dialog):
-    def __init__(self, ui_file_name, prev_output_dict, arg = None):
-        super().__init__(ui_file_name, prev_output_dict, arg)
+    def __init__(self, ui_file_name, test, arg = None):
+        super().__init__(ui_file_name, test, arg)
 
         self.radioButton_2.toggled.connect(lambda : self.disable_enable_children(self.radioButton_2.text()))
         self.radioButton_2.toggled.connect(self.validate_row_2)
@@ -842,6 +842,44 @@ class Argument_Dialog_Int(Argument_Dialog):
         else:
             return super().get_checked_button_values()
 
+class Argument_Dialog_Accounts(Argument_Dialog):
+    def __init__(self, ui_file_name, test, arg = None):
+        super().__init__(ui_file_name, test, arg)
+        self.accounts = test.accounts
+        self.rols = test.rols
+        self.selected_accounts = []
+
+        if arg != None:
+            self.selected_accounts = arg.data
+
+        self.radioButton_2.toggled.connect(lambda : self.disable_enable_children(self.radioButton_2.text()))
+        self.radioButton_2.toggled.connect(self.validate_row_2)
+
+        self.pushButton_2.clicked.connect(self.select_accounts)
+
+    def validate_row_2(self):
+        if self.selected_accounts != []:
+            self.buttonBox.button(QDialogButtonBox.StandardButton.Ok).setEnabled(True)
+        else:
+            self.buttonBox.button(QDialogButtonBox.StandardButton.Ok).setEnabled(False)
+
+    def select_accounts(self):
+        dlg = Select_Account_Dialog(self.accounts, self.rols, self.selected_accounts)
+
+        if dlg.exec():
+            self.selected_accounts = dlg.get_selected_accounts_indexes()
+            self.validate_row_2()
+        else:
+            pass
+
+    def get_checked_button_values(self):
+        if self.radioButton_2.isChecked():
+            arg = Argument("", "")
+            arg.data = self.selected_accounts
+
+            return arg
+        else:
+            return super().get_checked_button_values()
 
 class Select_Ether_Dialog(Argument_Dialog):
     def __init__(self, arg = None):
@@ -1003,10 +1041,9 @@ class Argument_Widget_v2(QWidget):
         self.label.setText(self.arg_name)
         self.pushButton.clicked.connect(self.select_args)
 
-
     def select_args(self):
         class_name, ui_file_name = self.get_ui_file_name()
-        dlg = class_name(ui_file_name, self.test.prev_outputs, self.arg)
+        dlg = class_name(ui_file_name, self.test, self.arg)
 
         if dlg.exec():
             self.arg = dlg.get_checked_button_values()
@@ -1023,6 +1060,9 @@ class Argument_Widget_v2(QWidget):
             if "int" in self.arg_type:
                 ui_file_name = "Argument_Dialog_Alt.ui"
                 class_name = Argument_Dialog_Int
+            elif "address" in self.arg_type:
+                ui_file_name = "Argument_Dialog_Accounts.ui"
+                class_name = Argument_Dialog_Accounts
 
         return class_name, ui_file_name
 
@@ -1181,11 +1221,13 @@ class Edit_Test_Dialog(Test_Dialog):
             self.add_instruction(is_contract_instruction, instruction)
 
 class Manage_Test(QDialog):
-    def __init__(self, contracts, project_path):
+    def __init__(self, main_window):
         super().__init__()
         uic.loadUi("./ui/Manage_Test.ui", self)
-        self.project_path = project_path
-        self.contracts = contracts
+
+        self.main_window = main_window
+        self.project_path = self.main_window.project.path
+        self.contracts = self.main_window.contracts
 
         self.line_edits = {0 : self.lineEdit, 2 : self.copy_test_name}
 
@@ -1236,12 +1278,12 @@ class Manage_Test(QDialog):
 
         if self.stackedWidget.currentIndex() == 0: # Create New Test
             test = Test(name=self.lineEdit.text())
-            dlg = Manage_Accounts(False, Test_Dialog, self.contracts, self.project_path, test)
+            dlg = Manage_Accounts(False, Test_Dialog, self.main_window, test)
 
         elif self.stackedWidget.currentIndex() == 1: #Edit Existing Test
             try:
                 test = self.test_data[self.edit_select.currentText()]
-                dlg = Manage_Accounts(True, Edit_Test_Dialog, self.contracts, self.project_path, test)
+                dlg = Manage_Accounts(True, Edit_Test_Dialog, self.main_window, test)
             except:
                 return # meanwhile
         elif self.stackedWidget.currentIndex() == 2: #Copy Existing Test
@@ -1257,7 +1299,7 @@ class Manage_Test(QDialog):
                 shutil.copytree(src_path, dst_path)
                 
                 #Añadir aqui el nuevo test a la lista de tests?
-                dlg = Manage_Accounts(True, Edit_Test_Dialog, self.contracts, self.project_path, copied_test)
+                dlg = Manage_Accounts(True, Edit_Test_Dialog, self.main_window, copied_test)
             except Exception as e:
                 print(e)
                 return # meanwhile
@@ -1281,13 +1323,14 @@ class Manage_Test(QDialog):
         return test_data
           
 class Manage_Accounts(QDialog):
-    def __init__(self, edit_bool, next_dlg, contracts, project_path, test):
+    def __init__(self, edit_bool, next_dlg, main_window, test):
         super().__init__()
         uic.loadUi("./ui/Manage_Accounts.ui", self)
 
+        self.main_window = main_window
         self.next_dlg = next_dlg
-        self.contracts = contracts
-        self.project_path = project_path
+        self.contracts = self.main_window.contracts
+        self.project_path = self.main_window.project.path
         self.test = test
         self.edit_bool = edit_bool
 
@@ -1297,17 +1340,33 @@ class Manage_Accounts(QDialog):
         # connect btns clicked signals to slots
         self.create_accounts_btn.clicked.connect(self.create_accounts)
         self.create_rol_btn.clicked.connect(self.create_rol)
+        self.add_accounts_btn.clicked.connect(self.add_existing_accounts)
+
+    def update_model(self):
+        self.model = Select_Accounts_Model(self.test.accounts)
+        self.listView.setModel(self.model)
 
     def create_accounts(self):
         number = self.accounts_number_spin.value()
         
         self.test.create_accounts(number)
         
-        self.model = Select_Accounts_Model(self.test.accounts)
-        self.listView.setModel(self.model)
-
+        self.update_model()
 
         # create accounts, adds them to a model and add to the qlistview
+
+    def add_existing_accounts(self):
+        accounts = self.main_window.accounts["persistent"]
+        dlg = Add_Existing_Accounts(list(accounts.values()))
+
+        if dlg.exec():
+            accounts = dlg.get_accounts()
+
+            if accounts != []:
+                for account in accounts:
+                    self.test.accounts.append(account)
+                
+                self.update_model()
 
     def create_rol(self):
         # hay que verificar que no haya un rol con el mismo nombre primero
@@ -1393,7 +1452,27 @@ class Select_Script(QDialog):
         uic.loadUi("./ui/Select_Script_Dlg.ui", self)
 
         self.comboBox.addItems(scripts) 
+
+class Add_Existing_Accounts(QDialog):
+    def __init__(self, accounts):
+        super().__init__()
+        uic.loadUi("./ui/Add_Existing_Accounts.ui", self)
         
+        self.accounts = accounts
+        self.model = Select_Accounts_Model(accounts)
+        self.listView.setModel(self.model)
+
+    def get_selected_accounts_indexes(self):
+        indexes = [index.row() for index in self.listView.selectedIndexes()]
+
+        return indexes
+    
+    def get_accounts(self):
+        indexes = self.get_selected_accounts_indexes()
+        accounts = [self.accounts[i] for i in indexes]
+
+        return accounts
+
 
 
 

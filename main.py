@@ -33,7 +33,7 @@ class MainWindow(QMainWindow):
 
         editor = Editor(font_families=self.font_families)
 
-        print("FONT ID: ", font_id)
+        #print("FONT ID: ", font_id)
 
         self.output = QTextEdit()
         self.output.setMaximumHeight(400)
@@ -254,7 +254,7 @@ class MainWindow(QMainWindow):
 
     def create_test(self):
         #dlg = Test_Dialog(self.contracts, self.project.path)
-        dlg = Manage_Test(self.contracts, self.project.path)
+        dlg = Manage_Test(self)
 
         if dlg.exec():
             print("YAY")
@@ -293,9 +293,6 @@ class MainWindow(QMainWindow):
 
             subprocess.Popen(["python", tmp_path])
             
-             
-
-
     def add_to_ipfs(self):
         dlg = Add_Files_IPFS(self.project.path)
 
@@ -336,11 +333,18 @@ class MainWindow(QMainWindow):
 
     def save_to_json(self):
         '''Saves contract information to json to be able to retrieve objs from a python/js script'''
-        tmp = {}
-        json_path = os.path.join(self.project.path, "contracts.json")
+        tmp = {"contracts" : {}, "accounts" : {}, "networks" : {}}
+        json_path = os.path.join(self.project.path, "project_data.json")
 
         for key, values in self.contracts.items():
-            tmp[key] = [contract.__dict__ for contract in values]
+            tmp["contracts"][key] = [contract.__dict__ for contract in values]
+
+
+        for key, dict_values in self.accounts.items():
+            tmp["accounts"][key] = [account.__dict__ for account in dict_values.values()]
+
+        for key, value in self.networks.items():
+            tmp["networks"][key] = value.__dict__
 
         with open(json_path, "w") as f:
             json.dump(tmp, f)
@@ -348,14 +352,14 @@ class MainWindow(QMainWindow):
     def retrieve_from_json(self):
         '''Reassigns address attribute of contract after script execution, in orden to remain synced. Doesn't 
         create new instance of contract objects so references aren't lost'''
-        json_path = os.path.join(self.project.path, "contracts.json")
+        json_path = os.path.join(self.project.path, "project_data.json")
 
         with open(json_path, "r") as f:
-            contracts_json = json.load(f)
+            data_json = json.load(f)
         
         for key, values in self.contracts.items():
             for i in range(len(values)):
-                self.contracts[key][i].address = contracts_json[key][i]["address"]
+                self.contracts[key][i].address = data_json["contracts"][key][i]["address"]
 
 
     def closeEvent(self, event):
