@@ -46,7 +46,7 @@ def compile_file(state):
             
 
 def add_account(state):
-    dlg = Add_Account_Dialog()
+    dlg = Add_Account_Dialog(state)
     if dlg.exec():
         name = dlg.get_account_name()
         key = dlg.get_priv_key()

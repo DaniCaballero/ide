@@ -30,11 +30,18 @@ class Local_Account:
     
 
 class Account:
-    def __init__(self, alias, priv_key, project_path=""):
+    def __init__(self, alias, priv_key="", project_path=""):
         self.alias = alias
-        self.address = self.get_address_from_priv_key(priv_key)
+        self.address = ""
         self.project_path = project_path
-        self.write_priv_key_to_env(priv_key, project_path)
+
+        if priv_key != "":
+            
+            if priv_key.startswith("0x") == False:
+                priv_key = "".join(("0x", priv_key))
+
+            self.address = self.get_address_from_priv_key(priv_key)
+            self.write_priv_key_to_env(priv_key, project_path)
 
     def load_private_key(self):
         path = os.path.join(self.project_path, ".env")

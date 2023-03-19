@@ -317,7 +317,7 @@ background-color: #517da6;
    <item>
     <layout class="QVBoxLayout" name="verticalLayout">
      <item>
-      <widget class="QCheckBox" name="checkBox">
+      <widget class="QCheckBox" name="use_csv">
        <property name="text">
         <string>Use csv for all arguments</string>
        </property>

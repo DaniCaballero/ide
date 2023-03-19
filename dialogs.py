@@ -179,22 +179,23 @@ class Deploy_Dialog(QDialog):
 class Add_Account_Dialog(QDialog):
     def __init__(self, parent=None):
         super().__init__(parent)
+        uic.loadUi("./ui/Add_Account.ui",self)
 
         self.setWindowTitle("Add account")
 
-        self.name_label = QLabel("Account name: ")
-        self.name_input = QLineEdit(self)
+        #self.name_label = QLabel("Account name: ")
+        #self.name_input = QLineEdit(self)
         self.name_input.textChanged.connect(self.set_enabled_button)
 
-        self.key_label = QLabel("Private key: ")
-        self.key_input = QLineEdit(self)
+        #self.key_label = QLabel("Private key: ")
+        #self.key_input = QLineEdit(self)
         self.key_input.textChanged.connect(self.set_enabled_button)
 
-        self.button_box = get_button_box(self)
+        #self.button_box = get_button_box(self)
 
-        self.layout = QVBoxLayout()
-        add_widgets_to_layout(self.layout, [self.name_label, self.name_input, self.key_label, self.key_input, self.button_box])
-        self.setLayout(self.layout)
+        #self.layout = QVBoxLayout()
+        #add_widgets_to_layout(self.layout, [self.name_label, self.name_input, self.key_label, self.key_input, self.button_box])
+        #self.setLayout(self.layout)
 
     def get_account_name(self):
         return self.name_input.text()
@@ -693,6 +694,7 @@ class Argument_Dialog(QDialog):
         self.radioButton_5.toggled.connect(self.validate_row_5)
 
         self.lineEdit.textChanged.connect(self.validate_row_1)
+        self.lineEdit_2.textChanged.connect(self.validate_row_5)
         
         self.pushButton.clicked.connect(self.get_path)
 
@@ -961,7 +963,7 @@ class Instruction_Widget(QWidget):
         dlg = List_Arguments_Dialog(self.arguments, self.accounts, self.rols, self.test, self.instruction)
 
         if dlg.exec():
-            if dlg.checkBox.isChecked():
+            if dlg.use_csv.isChecked():
                 file_path = dlg.file_path.text()
 
                 for arg in self.arguments:
@@ -1091,12 +1093,15 @@ class List_Arguments_Dialog(QDialog):
 
         self.select_accounts_btn.clicked.connect(self.add_accounts)
         self.select_ether_btn.clicked.connect(self.add_ether_values)
-        self.checkBox.toggled.connect(self.enable_disable_widgets)
+        self.use_csv.toggled.connect(self.enable_disable_widgets)
         self.browse_btn.clicked.connect(self.get_path)
         self.add_output_btn.clicked.connect(self.add_output_key)
 
         self.widget.setLayout(self.scroll_widget_layout)
         self.add_widgets(args)
+
+        if args == []:
+            self.use_csv.setEnabled(False)
 
     def add_widgets(self, args):
         select_arg_widget = None
@@ -1159,7 +1164,7 @@ class List_Arguments_Dialog(QDialog):
             pass
 
     def accept(self):
-        if self.checkBox.isChecked() and Path(self.file_path.text()).exists() and self.file_path.text() != "":
+        if self.use_csv.isChecked() and Path(self.file_path.text()).exists() and self.file_path.text() != "":
             return super().accept()
         else:
             are_args_valid = self.check_valid_args()
@@ -1356,7 +1361,11 @@ class Manage_Accounts(QDialog):
         # create accounts, adds them to a model and add to the qlistview
 
     def add_existing_accounts(self):
-        accounts = self.main_window.accounts["persistent"]
+        try:
+            accounts = self.main_window.accounts["persistent"]
+        except:
+            accounts = {}
+
         dlg = Add_Existing_Accounts(list(accounts.values()))
 
         if dlg.exec():

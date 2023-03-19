@@ -5,7 +5,7 @@ from dotenv import load_dotenv
 def init_ganache(state):
     ganache = shutil.which("ganache-cli")
     subprocess.Popen([ganache, "-d", "--account_keys_path", f"{os.path.join(state.project.path, 'keys.json')}"], stdout=subprocess.DEVNULL)
-    network = Local_Network("local", state.project.path)
+    network = Local_Network("local")
     w3 = network.connect_to_node()
     #chain_id = w3.eth.chain_id
     network.chain_id = 1337
@@ -15,11 +15,10 @@ def init_ganache(state):
 
     
 class Local_Network:
-    def __init__(self, name, project_path, chain_id=0,port="8545"):
+    def __init__(self, name, chain_id=0,port="8545"):
         self.name = name
         self.chain_id = chain_id
         self.port = port
-        self.project_path = project_path
 
     def connect_to_node(self):
         w3 = Web3(HTTPProvider(f"http://127.0.0.1:{self.port}"))
@@ -27,12 +26,14 @@ class Local_Network:
         return w3
 
 class Network:
-    def __init__(self, name, chain_id, api_key, project_path):
+    def __init__(self, name, chain_id, api_key="", project_path=""):
         self.name = name
         self.chain_id = 5
         self.nodes = []
         self.project_path = project_path
-        self.write_api_key_to_env(api_key, project_path) 
+
+        if api_key != "":
+            self.write_api_key_to_env(api_key, project_path) 
 
     def connect_to_node(self):
         api_key = self.load_api_key()

@@ -207,7 +207,7 @@ class Test:
         connect_nodes(http_ports)
         time.sleep(5)
 
-        self.nodes = [Local_Network(f"geth-{self.name}", "", 1325, port) for port in http_ports]
+        self.nodes = [Local_Network(f"geth-{self.name}", 1325, port) for port in http_ports]
 
         return pids
 

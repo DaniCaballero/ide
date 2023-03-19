@@ -101,7 +101,7 @@ def cast_web3_types(type_list, args_list):
     '''This function splits argument type in case is a list and splits its respective
     argument list by ',' so all elements can be converted to the corresponding type'''
     temp = []
-    print("TYPES:", type_list, args_list)
+    #print("TYPES:", type_list, args_list)
 
     for arg_type, arg in zip(type_list, args_list):
         if arg_type.endswith("[]"):
@@ -115,8 +115,6 @@ def cast_web3_types(type_list, args_list):
             cast_web3_helper(arg_type, arg, dim, temp)
         else:
             cast_web3_helper(arg_type, arg, 0, temp)
-
-    print("casted args", temp)
 
     return temp
 
@@ -176,7 +174,7 @@ class Contract:
 
     def get_instance(self, w3, network):
         address = self.address[network.chain_id]
-        print(address)
+        #print(address)
         contract_instance = w3.eth.contract(address=address, abi=self.abi)
 
         return contract_instance

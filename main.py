@@ -1,4 +1,4 @@
-from PyQt6.QtCore import QSize, Qt, QThread
+from PyQt6.QtCore import QSize, Qt, QThread, QProcess
 from PyQt6.QtWidgets import (QApplication, QWidget, QMainWindow, QLabel, QLineEdit, QVBoxLayout, QMenu, QHBoxLayout, QTextEdit, 
                             QTabWidget, QStackedLayout, QFrame, QToolButton, QSplitter, QStyleFactory, QMessageBox, QErrorMessage)
 from menu_functions import *
@@ -85,7 +85,7 @@ class MainWindow(QMainWindow):
         self.setCentralWidget(container)
     
     def add_to_output(self, text):
-        self.output.append(text)
+        self.output.append(f"{text}\n")
 
     def create_menu_bar(self):
         menu = self.menuBar()
@@ -291,7 +291,12 @@ class MainWindow(QMainWindow):
             with open(tmp_path, "w") as f:
                 f.writelines(new_content)
 
-            subprocess.Popen(["python", tmp_path])
+            process = QProcess(self)
+            process.readyRead.connect(lambda : self.add_to_output(process.readAll().data().decode("utf-8")))
+
+            process.start("python", [tmp_path])
+
+            #subprocess.Popen(["python", tmp_path])
             
     def add_to_ipfs(self):
         dlg = Add_Files_IPFS(self.project.path)
