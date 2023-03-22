@@ -1,5 +1,5 @@
 import os, shutil, keyword, pkgutil
-from PyQt6.QtWidgets import QTextEdit
+from PyQt6.QtWidgets import QTextEdit, QTextBrowser
 from pathlib import Path
 from PyQt6.Qsci import QsciScintilla, QsciLexerPython, QsciLexerJavaScript, QsciAPIs
 from PyQt6.QtGui import QColor, QFont
@@ -48,6 +48,20 @@ class Project:
                 return False
         
         return True
+    
+class Code_Output(QTextBrowser):
+    def __init__(self, parent):
+        super().__init__(parent=parent)
+
+        self.setOpenExternalLinks(True)
+
+    def add_to_output(self, text, deploy_bool, json_bool, link):
+        if deploy_bool:
+            self.append(f"Contract deployed at: <a style='color : blue' href='{link}'>{text}</a>\n")
+        elif json_bool:
+            self.append(f"{text}\n") #temporary
+        else:
+            self.append(f"{text}\n")
 
 class Editor(QsciScintilla):
     def __init__(self, file_path="", font_families=None):
@@ -92,7 +106,7 @@ class Editor(QsciScintilla):
         self.setMarginsBackgroundColor(QColor("#ffffff"))
 
         #self.SendScintilla(self.SCI_SETHSCROLLBAR,0)
-        self.SendScintilla(self.SCI_SETSCROLLWIDTH, 500) #Revisar cuantos pixeles poner aqui
+        #self.SendScintilla(self.SCI_SETSCROLLWIDTH, 500) 
 
 
     def insert_py_keywords(self):

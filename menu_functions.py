@@ -97,7 +97,6 @@ def deploy_contract(state):
             contract_name = dlg.get_contract()
             version = dlg.get_version()
             contract = state.contracts[contract_name][version]
-            contract_arg_types = contract.get_constructor()
             constructor_args = find_replace_split(dlg.constructor_args.text())
             
             network_name = dlg.get_network()
@@ -111,16 +110,17 @@ def deploy_contract(state):
 
             w3 = network.connect_to_node()
 
-            #threading.Thread(target=contract.deploy, args=(w3, network.chain_id, account, state, contract_arg_types, constructor_args,)).start()
             _, tx_receipt = contract.deploy(network, w3, account, constructor_args)
 
-            state.add_to_output(tx_receipt.contractAddress)
+            link = network.get_link("address", tx_receipt.contractAddress)
+            state.output.add_to_output(tx_receipt.contractAddress, True, False, link)
             # chequear si el thread finalizo bien primero
             state.functions_widget.insert_function(state, contract)
 
             state.save_to_json()
+            #threading.Thread(target=deploy_thread, args=(state, contract, network, w3, account, constructor_args,)).start()
         except Exception as e:
-            print(e)
+            state.add_to_output(e)
 
 def add_token_id(state):
     dlg = IPFS_Token_Dialog(state)

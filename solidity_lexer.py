@@ -22,6 +22,7 @@ class CustomSolidityLexer(QsciLexerCustom):
             'Token.Keyword.Constant' : 1,
             'Token.Punctuation' : 1,
             'Token.Name.Function' : 2,
+            'Token.Comment.Single' : 1
         }
 
     def _define_styles(self, color_list):

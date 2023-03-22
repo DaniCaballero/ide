@@ -1,14 +1,13 @@
 from PyQt6.QtCore import QSize, Qt, QThread, QProcess
-from PyQt6.QtWidgets import (QApplication, QWidget, QMainWindow, QLabel, QLineEdit, QVBoxLayout, QMenu, QHBoxLayout, QTextEdit, 
-                            QTabWidget, QStackedLayout, QFrame, QToolButton, QSplitter, QStyleFactory, QMessageBox, QErrorMessage)
+from PyQt6.QtWidgets import (QApplication, QWidget, QMainWindow, QHBoxLayout, QTabWidget, QStackedLayout, QSplitter, 
+                            QMessageBox, QErrorMessage, QTextBrowser)
 from menu_functions import *
 from dialogs import (Compile_Dialog, Add_Account_Dialog, Add_Node_Dialog, Deploy_Dialog, IPFS_Token_Dialog, Functions_Layout, 
                     Project_Widget, Left_Widget, Test_Dialog, Create_Project_Dialog, Manage_Test, Add_Files_IPFS, Select_Script)
 from account import Account, add_local_accounts
 from network import Network, init_ganache
 from ipfs import IPFS
-from interact import contract_interaction
-from project import Editor, Project
+from project import Editor, Project, Code_Output
 from PyQt6.QtGui import QAction, QColor, QPalette, QIcon, QFont, QFontDatabase
 import os, subprocess, psutil, sys, pickle, time, json
 
@@ -35,7 +34,7 @@ class MainWindow(QMainWindow):
 
         #print("FONT ID: ", font_id)
 
-        self.output = QTextEdit()
+        self.output = Code_Output(self)
         self.output.setMaximumHeight(400)
         self.output.setFrameStyle(0)
 
@@ -84,8 +83,9 @@ class MainWindow(QMainWindow):
 
         self.setCentralWidget(container)
     
-    def add_to_output(self, text):
-        self.output.append(f"{text}\n")
+    def add_to_output(self, text, deploy_bool = False, json_bool = False, link=""):
+        self.output.add_to_output(text, deploy_bool, json_bool, link)
+        #self.output.append(f"{text}\n")
 
     def create_menu_bar(self):
         menu = self.menuBar()

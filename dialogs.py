@@ -9,7 +9,7 @@ from pathlib import Path
 from collapsible import CollapsibleBox
 from contract import find_replace_split
 from project import Editor, Select_Accounts_Model
-from test import Sequence, Random, File, Prev_Output, Test, Instruction, Worker, List_Arg, Argument
+from test import Sequence, Random, File, Prev_Output, Test, Instruction, Worker, List_Arg, Argument, ResultsModel
 from web3 import Web3
 
 
@@ -205,9 +205,9 @@ class Add_Account_Dialog(QDialog):
 
     def set_enabled_button(self):
         if self.name_input.text() != "" and self.key_input.text() != "":
-            self.button_box.button(QDialogButtonBox.StandardButton.Ok).setEnabled(True)
+            self.buttonBox.button(QDialogButtonBox.StandardButton.Ok).setEnabled(True)
         else:
-            self.button_box.button(QDialogButtonBox.StandardButton.Ok).setEnabled(False)
+            self.buttonBox.button(QDialogButtonBox.StandardButton.Ok).setEnabled(False)
     
 class Add_Node_Dialog(QDialog):
     def __init__(self, parent=None):
@@ -544,6 +544,7 @@ class Test_Dialog(QDialog):
         self.add_inst_btn.clicked.connect(self.select_instruction)
         self.run_test_btn.clicked.connect(self.run_test)
         self.create_test_btn.clicked.connect(self.create_test)
+        self.results_btn.clicked.connect(self.see_results)
 
         # qcombobox = """QComboBox {border: 1px solid #ced4da; border-radius: 4px;padding-left: 10px;background-color: #f2f5ff} QComboBox::drop-down {border: none} QComboBox::down-arrow {image: url(./down.png); width: 12px; height: 12px; margin-right: 15px}
         #             QPushButton {border-radius: 4px} #Dialog {background-color: white}"""
@@ -636,6 +637,13 @@ class Test_Dialog(QDialog):
         self.run_test_btn.setEnabled(True)
         
         self.save_test()
+
+    def see_results(self):
+        # check first if there's a problem with test results
+        dlg = Results_Dialog(self.test.results)
+
+        if dlg.exec():
+            pass
     
     def show_error_progress_bar(self):
         self.progressBar.setStyleSheet("QProgressBar::chunk {background-color: red}")
@@ -653,6 +661,7 @@ class Test_Dialog(QDialog):
         worker.errorFound.connect(self.show_error_progress_bar)
         self.thread.started.connect(worker.work)
 
+        worker.finished.connect(lambda : self.results_btn.setEnabled(True))
         worker.finished.connect(self.thread.quit)
         worker.finished.connect(worker.deleteLater)
         self.thread.finished.connect(self.thread.deleteLater)
@@ -681,7 +690,8 @@ class Argument_Dialog(QDialog):
         self.current_toggled = None
         self.arg = arg
 
-        self.max_columns = {"File:" : [0, 2, 2] , "Sequence:" : [4, 4, 2], "Random:" : [3, 3, 2], "Previous Output:" : [1, 2, 1], "List:" : [2, 2, 1], "Accounts:" : [3,2,1]}
+        self.max_columns = {"File:" : [0, 2, 2] , "Sequence:" : [4, 4, 2], "Random:" : [3, 3, 2], "Previous Output:" : [1, 2, 2], "List:" : [2, 2, 1], "Accounts:" : [3,2,1]}
+        self.prev_output_index = None
 
         self.buttonBox.button(QDialogButtonBox.StandardButton.Ok).setEnabled(False)
 
@@ -697,6 +707,7 @@ class Argument_Dialog(QDialog):
         self.lineEdit_2.textChanged.connect(self.validate_row_5)
         
         self.pushButton.clicked.connect(self.get_path)
+        self.select_index_btn.clicked.connect(self.select_output_index)
 
         self.select_prev_output.addItems(list(test.prev_outputs.keys()))
 
@@ -729,6 +740,14 @@ class Argument_Dialog(QDialog):
             self.change_enabled_widgets(self.current_toggled, False)
 
         self.current_toggled = text
+
+    def select_output_index(self):
+        dlg = Select_Output_Index()
+
+        if dlg.exec():
+            if dlg.select_index_radio.isChecked():
+                self.prev_output_index = dlg.index_spin.value()
+
 
     def change_enabled_widgets(self, text, enabled):
         row, max_column, h_layout_max = self.max_columns[text]
@@ -770,7 +789,7 @@ class Argument_Dialog(QDialog):
         elif self.radioButton_4.isChecked():
             key_name = self.select_prev_output.currentText()
 
-            return Prev_Output(key_name)
+            return Prev_Output(key_name, self.prev_output_index)
         
         elif self.radioButton_5.isChecked():
             text = self.lineEdit_2.text()
@@ -1482,6 +1501,29 @@ class Add_Existing_Accounts(QDialog):
 
         return accounts
 
+class Results_Dialog(QDialog):
+    def __init__(self, results):
+        super().__init__()
+        uic.loadUi("./ui/Results_Dialog.ui", self)
 
+        self.model = ResultsModel(results)
+
+        for i,name in enumerate(["Node port","Contract Name", "Account", "Function Name", "Function arguments", "Return value/Tx hash"]):
+            self.model.setHeaderData(i, Qt.Orientation.Horizontal, name)
+
+        self.tableView.setModel(self.model)
+        self.tableView.setColumnHidden(0, True)
+        self.tableView.resizeColumnsToContents()
+        self.tableView.horizontalHeader().setStretchLastSection(True)
+        self.tableView.setAlternatingRowColors(True)
+
+        self.adjustSize()
+
+        #self.resize(self.tableView.sizeHint().width(), self.sizeHint().height())
+
+class Select_Output_Index(QDialog):
+    def __init__(self):
+        super().__init__()
+        uic.loadUi("./ui/Select_Output_Index.ui", self)
 
 

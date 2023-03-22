@@ -20,7 +20,9 @@ for i in range(1,len(accounts)):
 
 # Voters vote
 for i in range(1, len(accounts)):
-	contract.contract_interaction(network, w3, accounts[i], "vote", [random.randint(0,2)])
+	vote = random.randint(0,2)
+	print("Vote: ", vote)
+	contract.contract_interaction(network, w3, accounts[i], "vote", [vote])
 	
 # Check winner
 bool_val, result = contract.contract_interaction(network, w3, accounts[0], "winnerName", [])

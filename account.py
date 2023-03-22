@@ -40,7 +40,7 @@ class Account:
             if priv_key.startswith("0x") == False:
                 priv_key = "".join(("0x", priv_key))
 
-            self.address = self.get_address_from_priv_key(priv_key)
+            self.address = web3.eth.Account.from_key(priv_key).address
             self.write_priv_key_to_env(priv_key, project_path)
 
     def load_private_key(self):

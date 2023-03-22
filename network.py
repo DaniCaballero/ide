@@ -24,6 +24,9 @@ class Local_Network:
         w3 = Web3(HTTPProvider(f"http://127.0.0.1:{self.port}"))
 
         return w3
+    
+    def get_link(self, hash_type, hash):
+        return ""
 
 class Network:
     def __init__(self, name, chain_id, api_key="", project_path=""):
@@ -41,6 +44,14 @@ class Network:
         w3 = Web3(HTTPProvider(url))
 
         return w3
+    
+    def get_link(self, hash_type, hash):
+        if self.name == "mainnet":
+            url = f"https://goerli.etherscan.io/{hash_type}/{hash}"
+        else:
+            url = f"https://{self.name}.etherscan.io/{hash_type}/{hash}"
+
+        return url
 
     # proveedor de nodo tambien?
     def load_api_key(self):

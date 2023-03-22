@@ -1,5 +1,5 @@
 import random, pandas, time, threading, blocksmith, json, os, signal, decimal
-from PyQt6.QtCore import QThread, QObject, pyqtSignal
+from PyQt6.QtCore import QThread, QObject, pyqtSignal, QAbstractTableModel, Qt
 from account import Account, Test_Account
 from geth_nodes import init_geth_nodes, connect_nodes
 from network import Local_Network
@@ -67,6 +67,10 @@ class Test:
             if arg.__class__.__name__ == "Prev_Output":
                 # Data obtained in runtime
                 tmp_data = self.prev_outputs[arg.output_dict_name]
+
+                if arg.index != None:
+                    #tmp_data = self.prev_outputs[arg.output_dict_name][arg.index]
+                    tmp_data = [data[arg.index] for data in tmp_data]
 
             data.append(tmp_data)
 
@@ -313,13 +317,15 @@ class Random(Argument):
 
     def generate_data(self, iterations):
         self.data = [random.randint(self.min, self.max) for i in range(iterations)]
+        
         return self.data
     
 class Prev_Output(Argument):
-    def __init__(self, output_dict_name, name = "", type = ""):
+    def __init__(self, output_dict_name, index = None, name = "", type = ""):
         super().__init__(name, type)
 
         self.output_dict_name = output_dict_name
+        self.index = index
 
     def generate_data(self, iterations):
         return []
@@ -353,6 +359,28 @@ class List_Arg(Argument):
 class IPFS_Data:
     def __init__(self, folder_path):
         self.path = folder_path
+
+class ResultsModel(QAbstractTableModel):
+    def __init__(self, data):
+        super().__init__()
+        self._data = data
+        self.hheaders = ["Node port","Contract Name", "Account", "Function Name", "Function arguments", "Return value/Tx hash"]
+
+    def data(self, index, role):
+        if role == Qt.ItemDataRole.DisplayRole:
+            return self._data[index.row()][index.column()]
+        
+    def rowCount(self, index):
+        return len(self._data)
+    
+    def columnCount(self, index):
+        return len(self._data[0])
+    
+    def headerData(self, section, orientation, role=Qt.ItemDataRole.DisplayRole):
+        if orientation == Qt.Orientation.Horizontal and role == Qt.ItemDataRole.DisplayRole:
+            return self.hheaders[section]
+        
+        return super().headerData(section, orientation, role)
 
 class Worker(QObject):
     progressChanged = pyqtSignal(int)
