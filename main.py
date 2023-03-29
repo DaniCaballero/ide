@@ -4,6 +4,7 @@ from PyQt6.QtWidgets import (QApplication, QWidget, QMainWindow, QHBoxLayout, QT
 from menu_functions import *
 from dialogs import (Compile_Dialog, Add_Account_Dialog, Add_Node_Dialog, Deploy_Dialog, IPFS_Token_Dialog, Functions_Layout, 
                     Project_Widget, Left_Widget, Test_Dialog, Create_Project_Dialog, Manage_Test, Add_Files_IPFS, Select_Script)
+from visualizador import Visualizer
 from account import Account, add_local_accounts
 from network import Network, init_ganache
 from ipfs import IPFS
@@ -97,7 +98,7 @@ class MainWindow(QMainWindow):
         create_menu_option("Networks", ["Add node provider"], [lambda_func(add_node_provider, self)], [""], menu, self)
         create_menu_option("IPFS", ["Add Token ID", "Add file"], [lambda_func(add_token_id, self), self.add_to_ipfs], ["",""], menu, self)
         create_menu_option("Deploy", ["Deploy contract"], [lambda_func(deploy_contract, self)], [""], menu, self)
-        create_menu_option("Tests", ["Create Test"], [self.create_test], [""], menu, self)
+        create_menu_option("Tests", ["Create Test", "Visualize Blockchain Activity"], [self.create_test, self.visualizer], ["", ""], menu, self)
         create_menu_option("Run", ["Select Script", "Run Active File"], [self.run_script], ["", ""], menu, self)
         
 
@@ -260,6 +261,12 @@ class MainWindow(QMainWindow):
             print("YAY")
         else:
             print("WAINS")
+
+    def visualizer(self):
+        dlg = Visualizer(2, "C:\\Users\\Asus\\Documents\\Tesis\\Vote\\tests\\logss\\logs")
+
+        if dlg.exec():
+            pass
 
     def run_script(self):
         path = os.path.join(self.project.path, "scripts")

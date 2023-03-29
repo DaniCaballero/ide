@@ -1,4 +1,4 @@
-import random, pandas, time, threading, blocksmith, json, os, signal, decimal
+import random, pandas, time, threading, blocksmith, json, os, signal, decimal, psutil
 from PyQt6.QtCore import QThread, QObject, pyqtSignal, QAbstractTableModel, Qt
 from account import Account, Test_Account
 from geth_nodes import init_geth_nodes, connect_nodes
@@ -192,10 +192,12 @@ class Test:
 
     def end_geth_processes(self, pids):
         for pid in pids:
-            try:
-                os.kill(pid, signal.SIGTERM)
-            except:
-                pass
+
+            for child in psutil.Process(pid).children():
+                print("child pid: ", child.pid)
+                #child.terminate()
+                os.kill(child.pid, signal.SIGTERM)
+
 
     def configure_evironment(self):
        

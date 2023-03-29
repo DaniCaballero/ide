@@ -122,15 +122,16 @@ def init_geth_nodes(number_of_nodes, nodes_path, accounts):
 
     for i, ports in port_dict.items():
         if i == 0:
-            process =subprocess.Popen(['geth', '--identity', f'{i}', '--http', '--http.port', f'{ports[0]}',
+            process =subprocess.Popen(" ".join(['geth', '--identity', f'{i}', '--http', '--http.port', f'{ports[0]}',
                         '--authrpc.port', f"{ports[1]}",'--http.corsdomain', "*", '--datadir', os.path.join(nodes_path, f"node{i}"),
                         '--port', f'{ports[2]}', '--nodiscover','--networkid', '1325', '--http.api', 'eth,net,web3,personal,miner,admin,debug',
-                        '--allow-insecure-unlock', '--ipcdisable', '--nat', 'any', '--syncmode', 'full', '--unlock', f"{miner.address}", '--password', os.path.join(nodes_path, "pwd.txt"), '--mine', '--verbosity', "1"])
+                        '--allow-insecure-unlock', '--ipcdisable', '--nat', 'any', '--syncmode', 'full', '--unlock', f"{miner.address}", '--password', os.path.join(nodes_path, "pwd.txt"), '--mine', '--verbosity', "3",
+                          ">", f"{os.path.join(nodes_path, f'node{i}.log')} 2>&1"]), shell=True)
         else:
-            process =subprocess.Popen(['geth', '--identity', f'{i}', '--http', '--http.port', f'{ports[0]}',
+            process =subprocess.Popen(" ".join(['geth', '--identity', f'{i}', '--http', '--http.port', f'{ports[0]}',
                             '--authrpc.port', f"{ports[1]}",'--http.corsdomain', "*", '--datadir', os.path.join(nodes_path, f"node{i}"),
                             '--port', f'{ports[2]}', '--nodiscover','--networkid', '1325', '--http.api', 'eth,net,web3,personal,miner,admin,debug',
-                            '--allow-insecure-unlock', '--ipcdisable', '--nat', 'any', '--syncmode', 'full', '--verbosity', "1"])
+                            '--allow-insecure-unlock', '--ipcdisable', '--nat', 'any', '--syncmode', 'full', '--verbosity', "3",">", f"{os.path.join(nodes_path, f'node{i}.log')} 2>&1"]), shell=True)
 
         pids.append(process.pid)
 
