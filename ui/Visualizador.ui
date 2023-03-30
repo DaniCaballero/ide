@@ -92,7 +92,7 @@
       </spacer>
      </item>
      <item>
-      <widget class="QTextEdit" name="textEdit"/>
+      <widget class="QTextEdit" name="side_textbox"/>
      </item>
     </layout>
    </item>

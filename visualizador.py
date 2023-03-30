@@ -15,12 +15,20 @@ class Visualizer_Container(QWidget):
 
         self.comboBox.addItems(nodes_names)
 
+class Select_Test_Visualizer(QDialog):
+    def __init__(self, test_names):
+        super().__init__()
+        uic.loadUi("./ui/Select_Test_Visualizer.ui", self)
+
+        self.comboBox.addItems(test_names)
 
 class Visualizer(QDialog):
-    def __init__(self, nodes_number, dir):
+    def __init__(self, dir):
         super().__init__()
         uic.loadUi("./ui/Visualizador.ui", self)
-        self.nodes_number = nodes_number
+        #self.nodes_number = nodes_number
+
+        self.nodes_number = len([file_name for file_name in listdir(dir) if isfile(join(dir, file_name))])
 
         self.init_UI()
         self.leer(dir)
@@ -33,13 +41,16 @@ class Visualizer(QDialog):
         self.set_node_names()
 
         positions = [(i,j) for i in range(4) for j in range(4)]
+        index = 0
 
         for position, selection in zip(positions, self.node_names):
             container = Visualizer_Container(self.node_names)
             container.comboBox.setCurrentText(selection)
+            container.comboBox.currentTextChanged.connect(lambda checked, index=index: self.on_combobox_text_changed(index))
             grid.addWidget(container, *position)
 
             self.nodes_widgets.append((container.comboBox, container.textEdit))
+            index += 1
 
         # connect buttons signals to slots
         self.del_btn.clicked.connect(self.DelAllEntries)
@@ -48,6 +59,19 @@ class Visualizer(QDialog):
         #self.all_btn.clicked.connect(self.)
 
         self.verticalLayout_2.addLayout(grid)
+    
+    def on_combobox_text_changed(self, node_index):
+        #print("node index ", node_index)
+        (c, j) = self.nodes_widgets[node_index]
+        j.clear()
+
+        for i in range(self._pos):
+            if c.currentText() == self.all_entries[i][2]:
+                tmp = self.buildEntry(i)
+                j.append(f"{tmp}\n\n")
+
+        self.insert_prev_text(self._pos - 1)
+
 
     def set_node_names(self):
         self.node_names = [f"node{i}" for i in range(self.nodes_number)]
@@ -106,13 +130,13 @@ class Visualizer(QDialog):
             print("new line ", new_line)
             self.all_entries.append(new_line)
 
-    def buildEntry(self):
+    def buildEntry(self, index):
         #global pos, posLast
 
         posLast = self._pos   
-        tmp = f"Acc:{self._pos}:\n{self.all_entries[self._pos][0]}"
+        tmp = f"Acc:{index}:\n{self.all_entries[index][0]}"
 
-        tmp += f"\n{self.all_entries[self._pos][3]}"
+        tmp += f"\n{self.all_entries[index][3]}"
 
         # if self.entries[self._pos][2] == 'SENT' or self.entries[self._pos][2] == 'RECEIVED':
         #     tmp += f"{self.entries[self._pos][2]}\nType: {self.entries[self._pos][3]}, {self.entries[self._pos][4]}"
@@ -124,6 +148,7 @@ class Visualizer(QDialog):
 
     def NextEntry(self):
         #global pos
+        iter_bool = False
 
         if (self._pos == 0):
             # print("Dato: ", tipoDato_cb.get())
@@ -140,19 +165,43 @@ class Visualizer(QDialog):
 
             for (i, j) in self.nodes_widgets:
                 if i.currentText() == self.all_entries[self._pos][2] or len(self.nodes_widgets) == 1:
-                    tmp = self.buildEntry()
+                    tmp = self.buildEntry(self._pos)
 
                     #j.config(state=NORMAL)
                     #j.insert(1.0,f"{tmp}\n\n")
                     j.append(f"{tmp}\n\n")
+                    iter_bool = True
                     #j.config(state=DISABLED)
+            
+            if iter_bool == False:
+                self.side_textbox.clear()
+                tmp = self.buildEntry(self._pos)
+                self.side_textbox.append(f"{tmp}")
 
             self._pos = self._pos + 1
         except IndexError:
             print("Alcanzado el final de los logs actuales. Espere a que se generen mas.")
             pass
 
+    def insert_prev_text(self, index):
+        self.side_textbox.clear()
+        iter_bool = False
+
+        for i in range(index, -1, -1):
+            for (c, j) in self.nodes_widgets:
+                if c.currentText() == self.all_entries[i][2]:
+                    iter_bool = True
+            
+            if iter_bool == False:
+                print("Entered here!")
+                tmp = self.buildEntry(i)
+                self.side_textbox.append(f"{tmp}")
+                break
+
+            iter_bool = False
+
     def DelEntry(self):
+        iter_bool = False
 
         if self._pos > 0:
             for (i, j) in self.nodes_widgets:
@@ -165,6 +214,12 @@ class Visualizer(QDialog):
                     cursor.removeSelectedText()
                     j.setTextCursor(cursor)
                     #j.config(state=DISABLED)
+                    iter_bool = True
+            
+            if iter_bool == False:
+                #self.side_textbox.clear()
+                self.insert_prev_text(self._pos - 2)
+
             self._pos = max(0, self._pos-1)
 
     def DelAllEntries(self):
@@ -172,8 +227,10 @@ class Visualizer(QDialog):
         self._pos = 0
         for (i, j) in self.nodes_widgets:
             #j.config(state=NORMAL)
-            j.delete(1.0, "end")
+            j.clear()
             #j.config(state=DISABLED)
+        
+        self.side_textbox.clear()
 
     def leer(self, d):
         # obtiene nombre nodos

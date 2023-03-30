@@ -51,9 +51,9 @@ class Ui_Dialog(object):
         self.horizontalLayout_3.addLayout(self.verticalLayout)
         spacerItem = QtWidgets.QSpacerItem(38, 20, QtWidgets.QSizePolicy.Policy.Minimum, QtWidgets.QSizePolicy.Policy.Minimum)
         self.horizontalLayout_3.addItem(spacerItem)
-        self.textEdit = QtWidgets.QTextEdit(Dialog)
-        self.textEdit.setObjectName("textEdit")
-        self.horizontalLayout_3.addWidget(self.textEdit)
+        self.side_textbox = QtWidgets.QTextEdit(Dialog)
+        self.side_textbox.setObjectName("side_textbox")
+        self.horizontalLayout_3.addWidget(self.side_textbox)
         self.verticalLayout_2.addLayout(self.horizontalLayout_3)
 
         self.retranslateUi(Dialog)

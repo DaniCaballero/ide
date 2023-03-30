@@ -98,6 +98,11 @@ def init_new_blockchain(accounts, miner, nodes_path, number_of_nodes):
     for i in range(number_of_nodes):
         subprocess.Popen(['geth', '--datadir', os.path.join(nodes_path, f"node{i}"), 'init', os.path.join(nodes_path, 'genesis.json')])
 
+    try:
+        os.mkdir(os.path.join(nodes_path, "logs"))
+    except:
+        pass
+    
     time.sleep(4)
     subprocess.Popen(['geth', '--datadir', os.path.join(nodes_path, "node0"),'--password', os.path.join(nodes_path, "pwd.txt"),'account', 'import', os.path.join(nodes_path, "key.txt")])
 
@@ -126,12 +131,12 @@ def init_geth_nodes(number_of_nodes, nodes_path, accounts):
                         '--authrpc.port', f"{ports[1]}",'--http.corsdomain', "*", '--datadir', os.path.join(nodes_path, f"node{i}"),
                         '--port', f'{ports[2]}', '--nodiscover','--networkid', '1325', '--http.api', 'eth,net,web3,personal,miner,admin,debug',
                         '--allow-insecure-unlock', '--ipcdisable', '--nat', 'any', '--syncmode', 'full', '--unlock', f"{miner.address}", '--password', os.path.join(nodes_path, "pwd.txt"), '--mine', '--verbosity', "3",
-                          ">", f"{os.path.join(nodes_path, f'node{i}.log')} 2>&1"]), shell=True)
+                          ">", f"{os.path.join(nodes_path, 'logs',f'node{i}.log')} 2>&1"]), shell=True)
         else:
             process =subprocess.Popen(" ".join(['geth', '--identity', f'{i}', '--http', '--http.port', f'{ports[0]}',
                             '--authrpc.port', f"{ports[1]}",'--http.corsdomain', "*", '--datadir', os.path.join(nodes_path, f"node{i}"),
                             '--port', f'{ports[2]}', '--nodiscover','--networkid', '1325', '--http.api', 'eth,net,web3,personal,miner,admin,debug',
-                            '--allow-insecure-unlock', '--ipcdisable', '--nat', 'any', '--syncmode', 'full', '--verbosity', "3",">", f"{os.path.join(nodes_path, f'node{i}.log')} 2>&1"]), shell=True)
+                            '--allow-insecure-unlock', '--ipcdisable', '--nat', 'any', '--syncmode', 'full', '--verbosity', "3",">", f"{os.path.join(nodes_path,'logs', f'node{i}.log')} 2>&1"]), shell=True)
 
         pids.append(process.pid)
 

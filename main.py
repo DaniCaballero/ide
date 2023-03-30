@@ -4,7 +4,7 @@ from PyQt6.QtWidgets import (QApplication, QWidget, QMainWindow, QHBoxLayout, QT
 from menu_functions import *
 from dialogs import (Compile_Dialog, Add_Account_Dialog, Add_Node_Dialog, Deploy_Dialog, IPFS_Token_Dialog, Functions_Layout, 
                     Project_Widget, Left_Widget, Test_Dialog, Create_Project_Dialog, Manage_Test, Add_Files_IPFS, Select_Script)
-from visualizador import Visualizer
+from visualizador import Visualizer, Select_Test_Visualizer
 from account import Account, add_local_accounts
 from network import Network, init_ganache
 from ipfs import IPFS
@@ -263,10 +263,27 @@ class MainWindow(QMainWindow):
             print("WAINS")
 
     def visualizer(self):
-        dlg = Visualizer(2, "C:\\Users\\Asus\\Documents\\Tesis\\Vote\\tests\\logss\\logs")
+        #dlg = Visualizer(2, "C:\\Users\\Asus\\Documents\\Tesis\\Vote\\tests\\logss\\logs")
+        tests_path = os.path.join(self.project.path, "tests")
+        try:
+            dir_files = os.listdir(tests_path)
+        except:
+            dir_files = []
+
+        test_names = [dir_name for dir_name in dir_files if os.path.isdir(os.path.join(tests_path, dir_name))]
+
+        dlg = Select_Test_Visualizer(test_names)
 
         if dlg.exec():
-            pass
+            test_name = dlg.comboBox.currentText()
+            logs_path = os.path.join(tests_path, test_name, "logs")
+
+            if os.path.isdir(logs_path):
+                vis_dlg = Visualizer(logs_path)
+
+                if vis_dlg.exec():
+                    pass
+
 
     def run_script(self):
         path = os.path.join(self.project.path, "scripts")
