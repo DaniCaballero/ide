@@ -355,6 +355,22 @@ class List_Arg(Argument):
         self.data = find_replace_split(self.text)
 
         return self.data
+    
+class Time_Arg(Argument):
+    def __init__(self, seconds, random_bool = False, name = "", type = ""):
+        super().__init__(name, type)
+        self.seconds = seconds
+        self.random_bool = random_bool
+
+    def generate_data(self, iterations):
+        current_time = time.time()
+
+        if self.random_bool == False:
+            self.data = [current_time + self.seconds]
+        else:
+            self.data = [current_time + random.randint(self.seconds) for i in iterations]
+
+        return self.data
 
 
 # class for data that need to be uploaded to IPFS to obtain the identifier that will be in the contract

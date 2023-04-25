@@ -29,9 +29,10 @@ class Visualizer(QDialog):
         #self.nodes_number = nodes_number
 
         self.nodes_number = len([file_name for file_name in listdir(dir) if isfile(join(dir, file_name))])
+        self.last_textbox = []
 
         self.init_UI()
-        self.leer(dir)
+        self.read_logs(dir)
 
     def init_UI(self):
         grid = QGridLayout()
@@ -56,7 +57,8 @@ class Visualizer(QDialog):
         self.del_btn.clicked.connect(self.DelAllEntries)
         self.back_btn.clicked.connect(self.DelEntry)
         self.next_btn.clicked.connect(self.NextEntry)
-        #self.all_btn.clicked.connect(self.)
+        self.all_btn.clicked.connect(self.AllEntries)
+        self.skip_btn.clicked.connect(self.SkipEntries)
 
         self.verticalLayout_2.addLayout(grid)
     
@@ -71,6 +73,9 @@ class Visualizer(QDialog):
                 j.append(f"{tmp}\n\n")
 
         self.insert_prev_text(self._pos - 1)
+        self.change_background_color("255,255,255")
+        self.restoreLastPos()
+        self.change_background_color("204,230,255")
 
 
     def set_node_names(self):
@@ -82,9 +87,9 @@ class Visualizer(QDialog):
 
     
     def follow(self, _file, index):
-        log_filter = ["Unlocked account", "Commit new sealing work", "Successfully seal new block", "mined potential block",
+        log_filter = ["Commit new sealing work", "Successfully seal new block", "mined potential block",
                       "Submitted contract creation", "Submitted transaction", "block reached canonical chain", "block lost",
-                      "Setting new local account", "Imported new chain segment", "Chain reorg detected"]
+                      "Imported new chain segment", "Chain reorg detected"]
         while True:
             filter_bool = False
             line = _file.readline().rstrip('\n')
@@ -109,25 +114,26 @@ class Visualizer(QDialog):
         #         entradasTx.append(tmp)
 
         #     entradasTodos.append(tmp)
-        separators = ["number", "hash", "address"]
+        separators = ["blocks","number", "hash", "address"]
         for line in lg:
             new_line = []
             for sep in separators:
                 tmp = line.split(sep)
                 if len(tmp) > 1:
                     tmp[1] = sep + tmp[1]
-                    for i, sub in enumerate(tmp):
-                        tmp_sub = sub.split(" ")
-                        if i == 0:
-                            tmp_sub = tmp_sub[:3] + [" ".join(tmp_sub[3:])]
-                        new_line += tmp_sub
                     break
+            
+            for i, sub in enumerate(tmp):
+                tmp_sub = sub.split(" ")
+                if i == 0:
+                    tmp_sub = tmp_sub[:3] + [" ".join(tmp_sub[3:])]
+                new_line += tmp_sub
             
             tmp_date = new_line[2]
             new_line[2] = new_line[0]
             new_line[0] = tmp_date
             new_line[3] = new_line[3].strip()
-            print("new line ", new_line)
+            #print("new line ", new_line)
             self.all_entries.append(new_line)
 
     def buildEntry(self, index):
@@ -145,6 +151,10 @@ class Visualizer(QDialog):
         #     tmp += f"\nType: {self.entries[self._pos][2]}, {self.entries[self._pos][3]}"
         
         return tmp
+    
+    def change_background_color(self, color):
+        for box in self.last_textbox:
+            box.setStyleSheet(f"background-color: rgb({color})")
 
     def NextEntry(self):
         #global pos
@@ -162,7 +172,8 @@ class Visualizer(QDialog):
 
         try:
             print(f"Procesando log: {self.all_entries[self._pos]}")
-
+            self.change_background_color("255,255,255")
+            self.last_textbox = []
             for (i, j) in self.nodes_widgets:
                 if i.currentText() == self.all_entries[self._pos][2] or len(self.nodes_widgets) == 1:
                     tmp = self.buildEntry(self._pos)
@@ -170,6 +181,7 @@ class Visualizer(QDialog):
                     #j.config(state=NORMAL)
                     #j.insert(1.0,f"{tmp}\n\n")
                     j.append(f"{tmp}\n\n")
+                    self.last_textbox.append(j)
                     iter_bool = True
                     #j.config(state=DISABLED)
             
@@ -177,6 +189,9 @@ class Visualizer(QDialog):
                 self.side_textbox.clear()
                 tmp = self.buildEntry(self._pos)
                 self.side_textbox.append(f"{tmp}")
+                self.last_textbox.append(self.side_textbox)
+            
+            self.change_background_color("204,230,255")
 
             self._pos = self._pos + 1
         except IndexError:
@@ -193,17 +208,87 @@ class Visualizer(QDialog):
                     iter_bool = True
             
             if iter_bool == False:
-                print("Entered here!")
                 tmp = self.buildEntry(i)
                 self.side_textbox.append(f"{tmp}")
                 break
 
             iter_bool = False
 
+    def AllEntries(self):
+        self.change_background_color("255,255,255")
+
+        for x in range(self._pos, len(self.all_entries)):
+            self.last_textbox = []
+            iter_bool = False
+            try:
+                for (c,j) in self.nodes_widgets:
+                    if c.currentText() == self.all_entries[self._pos][2]:
+                        tmp = self.buildEntry(self._pos)
+                        j.append(f"{tmp}\n\n")
+                        self.last_textbox.append(j)
+                        iter_bool = True
+
+                if iter_bool == False:
+                    self.side_textbox.clear()
+                    tmp = self.buildEntry(self._pos)
+                    self.side_textbox.append(f"{tmp}")
+                    self.last_textbox.append(self.side_textbox)
+
+                self._pos += 1
+            except:
+                pass
+
+        self.change_background_color("204,230,255")
+
+    def SkipEntries(self):
+        value = self.skip_value.value()
+        self.change_background_color("255,255,255")
+
+        for x in range(self._pos, self._pos + value):
+            self.last_textbox = []
+            iter_bool = False
+            try:
+                for (c,j) in self.nodes_widgets:
+                    if c.currentText() == self.all_entries[self._pos][2]:
+                        tmp = self.buildEntry(self._pos)
+                        j.append(f"{tmp}\n\n")
+                        self.last_textbox.append(j)
+                        iter_bool = True
+
+                if iter_bool == False:
+                    self.side_textbox.clear()
+                    tmp = self.buildEntry(self._pos)
+                    self.side_textbox.append(f"{tmp}")
+                    self.last_textbox.append(self.side_textbox)
+
+                self._pos += 1
+            except:
+                pass
+
+        self.change_background_color("204,230,255")
+
+    
+    def restoreLastPos(self):
+        iter_bool = False
+
+        if self._pos > 0:
+            self.last_textbox = []
+
+            for (i, j) in self.nodes_widgets:
+                if i.currentText() == self.all_entries[self._pos-1][2] or len(self.nodes_widgets) == 1:
+                    self.last_textbox.append(j)
+                    iter_bool = True
+            
+            if iter_bool == False:
+                self.last_textbox.append(self.side_textbox)
+
+
     def DelEntry(self):
         iter_bool = False
 
         if self._pos > 0:
+            self.change_background_color("255,255,255")
+
             for (i, j) in self.nodes_widgets:
                 if i.currentText() == self.all_entries[self._pos-1][2] or len(self.nodes_widgets) == 1:
                     #j.config(state=NORMAL)
@@ -221,9 +306,12 @@ class Visualizer(QDialog):
                 self.insert_prev_text(self._pos - 2)
 
             self._pos = max(0, self._pos-1)
+            self.restoreLastPos()
+            self.change_background_color("204,230,255")
 
     def DelAllEntries(self):
-
+        self.change_background_color("255,255,255")
+        
         self._pos = 0
         for (i, j) in self.nodes_widgets:
             #j.config(state=NORMAL)
@@ -232,11 +320,11 @@ class Visualizer(QDialog):
         
         self.side_textbox.clear()
 
-    def leer(self, d):
+    def read_logs(self, d):
         # obtiene nombre nodos
         # Todas estas variables globales son mala practica, pero como ya el script lo tenia aprovecho y lo hago mal tambien
-        global nodeNames, fechaI, fechaF, entradas, log_generators, entradasBloque, entradasTodos, entradasTx, tipoDato
-        global datoBloque, datoTx, accPres, accNTx, accPTx, tipoAcc
+        # global nodeNames, fechaI, fechaF, entradas, log_generators, entradasBloque, entradasTodos, entradasTx, tipoDato
+        # global datoBloque, datoTx, accPres, accNTx, accPTx, tipoAcc
 
         log_filenames = [join(d, f) for f in listdir(d) if isfile(join(d, f))]
         log_files = [open(fn, 'r') for fn in log_filenames]
@@ -250,19 +338,19 @@ class Visualizer(QDialog):
         
         # obtiene entradas del log
 
-        entradas = []
-        entradasTodos = []
-        entradasTx = []
-        entradasBloque = []
+        # entradas = []
+        # entradasTodos = []
+        # entradasTx = []
+        # entradasBloque = []
 
-        tipoDato = 'Todos'
-        tipoAcc = 'Todos'
+        # tipoDato = 'Todos'
+        # tipoAcc = 'Todos'
 
-        datoTx = ['Transaction', 'TransactionAck', 'newTransaction', 'newTransactionAck']
-        datoBloque = ['blockMined']
-        accPres = ['announce', 'announceAck']
-        accNTx = ['newTransaction', 'newTransactionAck']
-        accPTx = ['Transaction', 'TransactionAck']
+        # datoTx = ['Transaction', 'TransactionAck', 'newTransaction', 'newTransactionAck']
+        # datoBloque = ['blockMined']
+        # accPres = ['announce', 'announceAck']
+        # accNTx = ['newTransaction', 'newTransactionAck']
+        # accPTx = ['Transaction', 'TransactionAck']
 
         generator_threads = [threading.Thread(target=self.generate, args=(lg, ), daemon=True) for lg in log_generators]
         for gt in generator_threads:

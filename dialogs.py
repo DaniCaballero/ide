@@ -9,7 +9,7 @@ from pathlib import Path
 from collapsible import CollapsibleBox
 from contract import find_replace_split
 from project import Editor, Select_Accounts_Model
-from test import Sequence, Random, File, Prev_Output, Test, Instruction, Worker, List_Arg, Argument, ResultsModel
+from test import Sequence, Random, File, Prev_Output, Test, Instruction, Worker, List_Arg, Argument, ResultsModel, Time_Arg
 from web3 import Web3
 
 
@@ -690,7 +690,8 @@ class Argument_Dialog(QDialog):
         self.current_toggled = None
         self.arg = arg
 
-        self.max_columns = {"File:" : [0, 2, 2] , "Sequence:" : [4, 4, 2], "Random:" : [3, 3, 2], "Previous Output:" : [1, 2, 2], "List:" : [2, 2, 1], "Accounts:" : [3,2,1]}
+        self.max_columns = {"File:" : [0, 2, 2] , "Sequence:" : [4, 4, 2], "Random:" : [3, 3, 2], "Previous Output:" : [1, 2, 2],
+                             "List:" : [2, 2, 1], "Accounts:" : [3,2,1], "Time:" : [5, 3, 2]}
         self.prev_output_index = None
 
         self.buttonBox.button(QDialogButtonBox.StandardButton.Ok).setEnabled(False)
@@ -807,12 +808,25 @@ class Argument_Dialog_Int(Argument_Dialog):
         self.radioButton_2.toggled.connect(self.validate_row_2)
         self.radioButton_3.toggled.connect(lambda : self.disable_enable_children(self.radioButton_3.text()))
         self.radioButton_3.toggled.connect(self.validate_row_3)
+        self.radioButton_6.toggled.connect(lambda : self.disable_enable_children(self.radioButton_6.text()))
+        self.radioButton_6.toggled.connect(self.activate_checkbox)
 
         self.spinBox.valueChanged.connect(self.validate_row_2)
         self.spinBox_2.valueChanged.connect(self.validate_row_2)
 
         self.spinBox_4.valueChanged.connect(self.validate_row_3)
         self.spinBox_5.valueChanged.connect(self.validate_row_3)
+
+    def disable_enable_children(self, text):
+        if text != "Time:":
+            self.random_checkbox.setEnabled(False)
+
+        return super().disable_enable_children(text)
+
+    def activate_checkbox(self):
+        if self.radioButton_6.isChecked():
+            self.random_checkbox.setEnabled(True)
+            self.buttonBox.button(QDialogButtonBox.StandardButton.Ok).setEnabled(True)
 
     def set_default_values(self):
         class_name = type(self.arg).__name__
@@ -859,6 +873,12 @@ class Argument_Dialog_Int(Argument_Dialog):
             end = self.spinBox_5.value()
 
             return Random(start, end)
+        
+        elif self.radioButton_6.isChecked():
+            seconds = self.seconds_spin.value()
+            random_bool = self.random_checkbox.isChecked()
+
+            return Time_Arg(seconds, random_bool)
         
         else:
             return super().get_checked_button_values()
