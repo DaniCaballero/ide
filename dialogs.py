@@ -923,8 +923,8 @@ class Argument_Dialog_Accounts(Argument_Dialog):
             return super().get_checked_button_values()
 
 class Select_Ether_Dialog(Argument_Dialog):
-    def __init__(self, arg = None):
-        super().__init__(arg)
+    def __init__(self, ui_file_name, test, arg = None):
+        super().__init__(ui_file_name, test, arg)
         
         self.label.setText("Select Ether to send")
 
@@ -955,7 +955,7 @@ class Instruction_Widget(QWidget):
         self.test = test
         self.instruction = instruction
         self.instruction_accounts = []
-        self.msg_values = Random(0,0, "ether denomination", "wei")
+        self.msg_values = Random(0,0, "ether", "wei")
         self.is_defined = False
         self.prev_output_key = None
 
@@ -1125,7 +1125,7 @@ class List_Arguments_Dialog(QDialog):
         else:
             self.selected_accounts = []
 
-        self.msg_values = Random(0,0, "ether denomination", "wei")
+        self.msg_values = Random(0,0, "ether", "wei")
 
         self.scroll_widget_layout = QVBoxLayout()
         self.scroll_widget_layout.setAlignment(Qt.AlignmentFlag.AlignTop)
@@ -1166,7 +1166,7 @@ class List_Arguments_Dialog(QDialog):
         return True
 
     def enable_disable_widgets(self):
-        checked_bool = self.checkBox.isChecked()
+        checked_bool = self.use_csv.isChecked()
 
         self.file_path.setEnabled(checked_bool)
         self.browse_btn.setEnabled(checked_bool)
@@ -1193,12 +1193,12 @@ class List_Arguments_Dialog(QDialog):
             pass
 
     def add_ether_values(self):
-        dlg = Select_Ether_Dialog()
+        dlg = Select_Ether_Dialog("Argument_Dialog_Base.ui", self.test)
 
         if dlg.exec():
             self.msg_values = dlg.get_checked_button_values()
             self.msg_values.type = dlg.select_wei_denomination.currentText()
-            self.msg_values.name = "ether denomination"
+            self.msg_values.name = "ether"
         else:
             pass
 
@@ -1448,7 +1448,7 @@ class Instruction_Balance_Widget(QWidget):
         self.instruction = instruction
         
         self.instruction_accounts = []
-        self.msg_values = Random(0,0, "ether denomination", "wei")
+        self.msg_values = Random(0,0, "ether", "wei")
         self.is_defined = False
         self.prev_output_key = None
 

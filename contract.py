@@ -118,6 +118,14 @@ def cast_web3_types(type_list, args_list):
 
     return temp
 
+
+def _sign_and_send_tx(tx, account, w3):
+        signed_tx = account.sign_transaction(w3, tx)
+        tx_hash = w3.eth.send_raw_transaction(signed_tx.rawTransaction)  
+        tx_receipt = w3.eth.wait_for_transaction_receipt(tx_hash)
+
+        return tx_receipt
+
 class Contract: 
     def __init__(self, name, abi, bytecode):
         self.name = name
@@ -128,32 +136,38 @@ class Contract:
     def __str__(self):
         return f"{self.name}"
 
-    def _sign_and_send_tx(self, tx, account, w3):
-        signed_tx = account.sign_transaction(w3, tx)
-        tx_hash = w3.eth.send_raw_transaction(signed_tx.rawTransaction)  
-        tx_receipt = w3.eth.wait_for_transaction_receipt(tx_hash)
+    # def _sign_and_send_tx(self, tx, account, w3):
+    #     signed_tx = account.sign_transaction(w3, tx)
+    #     tx_hash = w3.eth.send_raw_transaction(signed_tx.rawTransaction)  
+    #     tx_receipt = w3.eth.wait_for_transaction_receipt(tx_hash)
 
-        return tx_receipt
+    #     return tx_receipt
 
-    def deploy(self, network, w3, account, constructor_args, msg_value = 0):
+    def deploy(self, network, w3, account, constructor_args, msg_value = 0, nonce  = None):
         _, type_list = self.get_function_visibility_input_types("constructor")
         casted_args = cast_web3_types(type_list, constructor_args)
         contract = w3.eth.contract(abi=self.abi, bytecode=self.bytecode)
-        nonce = w3.eth.getTransactionCount(account.address)
+
+        if nonce == None:
+            nonce = w3.eth.getTransactionCount(account.address)
 
         tx = contract.constructor(*casted_args).build_transaction(
             {"gasPrice": w3.eth.gas_price,"from" : account.address, "chainId" : network.chain_id, "nonce" : nonce, "value" : msg_value})
         
-        tx_receipt = self._sign_and_send_tx(tx, account, w3)
+        print("llegue aqui")
+        
+        tx_receipt = _sign_and_send_tx(tx, account, w3)
         self.address[network.chain_id] = tx_receipt.contractAddress
 
-        #return f"Contract deployed at: {tx_receipt.contractAddress}\n"
         return True, tx_receipt
 
-    def contract_interaction(self, network, w3, account, function_name, args_list, msg_value = 0):
+    def contract_interaction(self, network, w3, account, function_name, args_list, msg_value = 0, nonce = None):
         visibility, type_list = self.get_function_visibility_input_types(function_name)
         casted_args = cast_web3_types(type_list, args_list)
-        nonce = w3.eth.getTransactionCount(account.address)
+
+        if nonce == None:
+            nonce = w3.eth.getTransactionCount(account.address)
+    
         contract_instance = self.get_instance(w3, network)
 
         tx = {"chainId" : network.chain_id, "from" : account.address, "nonce" : nonce, "gasPrice" : w3.eth.gas_price, "value" : msg_value}
@@ -165,7 +179,7 @@ class Contract:
 
             else:
                 tx = contract_instance.functions[function_name](*casted_args).build_transaction(tx)
-                tx_receipt = self._sign_and_send_tx(tx, account, w3)
+                tx_receipt = _sign_and_send_tx(tx, account, w3)
 
                 return True, tx_receipt
                 

@@ -4,7 +4,7 @@ from account import Account, Test_Account
 from geth_nodes import init_geth_nodes, connect_nodes
 from network import Local_Network
 from web3 import Web3, datastructures, middleware
-from contract import find_replace_split
+from contract import find_replace_split, _sign_and_send_tx
 
 class CustomThread(threading.Thread):
     '''Custom class that saves any exception occured during thread execution and reraises it 
@@ -31,6 +31,10 @@ def set_miner_info(miner, test_path):
     with open(os.path.join(test_path,"pwd.txt"), "w") as f:
         f.write("miner_password")
 
+def send_ether_transaction(from_account, to_addr, value, nonce, w3, chain_id):
+    tx = {'from' : from_account.address,'nonce' : nonce, 'to' : to_addr, 'chainId' : chain_id, 'value' : value, "gas" : 21000,"gasPrice": w3.eth.gas_price}
+    tx_receipt = _sign_and_send_tx(tx, from_account, w3)
+
 class Test:
     def __init__(self, name="", number_of_nodes=1, concurrency_number=1, project_path=""):
         self.name = name
@@ -46,6 +50,7 @@ class Test:
         self.prev_outputs = {}
         self.first_instruction = True
         self.error = False
+        self.nonce_tracker = {}
 
     def __str__(self):
         return f"{self.instructions}"
@@ -58,7 +63,7 @@ class Test:
             tmp_data = arg.data
             #print("data ", tmp_data)
 
-            if arg.name == "ether denomination":
+            if arg.name == "ether":
                 tmp_data = [Web3.toWei(decimal.Decimal(data), arg.type) for data in tmp_data]
 
             if arg.type == "address":
@@ -99,6 +104,17 @@ class Test:
             total += inst.number_of_executions
 
         return total
+    
+    def get_nonce(self, address):
+        try:
+            self.nonce_tracker[address] += 1
+        except:
+            self.nonce_tracker[address] = 0
+
+        nonce = self.nonce_tracker[address]
+        #print("nonce ", nonce)
+
+        return nonce
 
     def create_accounts(self, acc_number):
         #self.accounts = []
@@ -172,13 +188,20 @@ class Test:
 
             account, msg_value, args_row = self._extract_row(i, th_args_index[1], args)
 
+            lock.acquire()
+            nonce = self.get_nonce(account.address)
+            lock.release()
+
             if contract == "":
                 return_value = w3.eth.getBalance(account.address)
             else:
                 if function_name == "constructor":
-                    return_bool, return_value = contract.deploy(node, w3, account, args_row, msg_value)
+                    return_bool, return_value = contract.deploy(node, w3, account, args_row, msg_value, nonce)
                 else:
-                    return_bool, return_value = contract.contract_interaction(node, w3, account, function_name, args_row, msg_value)
+                    return_bool, return_value = contract.contract_interaction(node, w3, account, function_name, args_row, msg_value, nonce)
+
+            if return_bool == False:
+                send_ether_transaction(account, account.address, 100, nonce, w3, node.chain_id) #praying that this works
 
             time.sleep(max(time_interval - ((time.time() - start_time)), 0))
             
@@ -188,6 +211,7 @@ class Test:
             self.add_to_prev_output(return_value, prev_output_key)
             self.add_entry_to_results(node.port, str(contract), account.address, function_name, args_row, return_bool, return_value)
             self.inst_count += 1
+            print("nonce, inst_count, real nonce", nonce, self.inst_count, w3.eth.getTransactionCount(account.address))
             lock.release()
 
     def end_geth_processes(self, pids):
@@ -212,7 +236,7 @@ class Test:
         http_ports, pids = init_geth_nodes(self.number_of_nodes, test_path, self.accounts)
         connect_nodes(http_ports)
         time.sleep(5)
-
+        
         self.nodes = [Local_Network(f"geth-{self.name}", 1325, port) for port in http_ports]
 
         return pids
