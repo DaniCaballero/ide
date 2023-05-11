@@ -22,6 +22,7 @@ class MainWindow(QMainWindow):
         self.networks = {}
         self.accounts = {}
         self.contracts = {}
+        self.tests = {}
         self.ipfs = ""
         
         with open("main_styles.qss", "r") as f:
@@ -120,8 +121,6 @@ class MainWindow(QMainWindow):
                 
                 self.project.path = path
                 self.project.init_project()
-
-                self.project_widget.add_tree_view(path)
                             
                 init_ganache(self)
                 time.sleep(3)
@@ -133,6 +132,7 @@ class MainWindow(QMainWindow):
 
                 #self.output.append(f"Project initialized at {path}\n")
                 self.statusBar().showMessage(f"Project initialized at {path}", 2000)
+                self.project_widget.add_tree_view(path)
             except:
                 self.statusBar().showMessage(f"Unable to initialize project at {path}", 2500)
 
@@ -147,7 +147,6 @@ class MainWindow(QMainWindow):
         if is_project:
             try:
                 self.project.path = path
-                self.project_widget.add_tree_view(path)
                 
                 init_ganache(self)
                 self.load_data()
@@ -160,6 +159,7 @@ class MainWindow(QMainWindow):
 
                 #self.output.append(f"Project found at {path}\n")
                 self.statusBar().showMessage(f"Project found at {path}", 2000)
+                self.project_widget.add_tree_view(path)
             except:
                 self.statusBar().showMessage(f"Unable to open project at {path}", 2500)
 
@@ -344,6 +344,7 @@ class MainWindow(QMainWindow):
             self.accounts = data["accounts"]
             self.networks = data["networks"]
             self.contracts = data["contracts"]
+            self.tests = data["tests"]
             self.ipfs = data["ipfs"]
 
         except Exception:
@@ -355,6 +356,7 @@ class MainWindow(QMainWindow):
         data["accounts"] = self.accounts
         data["networks"] = self.networks
         data["contracts"] = self.contracts
+        data["tests"] = self.tests
         data["ipfs"] = self.ipfs
 
         with open(os.path.join(path, "data.pkl"), "wb") as f:
@@ -392,8 +394,10 @@ class MainWindow(QMainWindow):
 
 
     def closeEvent(self, event):
-        self.save_data()
+        if self.project.path != "":
+            self.save_data()
 
+        # Ganache has to be terminated when app closes 
         for child in psutil.Process(os.getpid()).children():
             for child2 in psutil.Process(child.pid).children():
                 child2.terminate()

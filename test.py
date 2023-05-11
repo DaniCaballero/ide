@@ -173,6 +173,8 @@ class Test:
         return_bool, return_value = True, ""
         start_time = time.time()
 
+        visibility, _ = contract.get_function_visibility_input_types(function_name)
+
         for i in range(n_iter):
             node = random.choice(self.nodes)
 
@@ -189,7 +191,10 @@ class Test:
             account, msg_value, args_row = self._extract_row(i, th_args_index[1], args)
 
             lock.acquire()
-            nonce = self.get_nonce(account.address)
+            if visibility == "view" or visibility == "pure":
+                nonce = None
+            else:
+                nonce = self.get_nonce(account.address)
             lock.release()
 
             if contract == "":
@@ -211,16 +216,19 @@ class Test:
             self.add_to_prev_output(return_value, prev_output_key)
             self.add_entry_to_results(node.port, str(contract), account.address, function_name, args_row, return_bool, return_value)
             self.inst_count += 1
-            print("nonce, inst_count, real nonce", nonce, self.inst_count, w3.eth.getTransactionCount(account.address))
+            #print("nonce, inst_count, real nonce", nonce, self.inst_count, w3.eth.getTransactionCount(account.address))
             lock.release()
 
     def end_geth_processes(self, pids):
         for pid in pids:
 
-            for child in psutil.Process(pid).children():
-                print("child pid: ", child.pid)
-                #child.terminate()
-                os.kill(child.pid, signal.SIGTERM)
+            try:
+                for child in psutil.Process(pid).children():
+                    print("child pid: ", child.pid)
+                    #child.terminate()
+                    os.kill(child.pid, signal.SIGTERM)
+            except:
+                print("Process not found")
 
 
     def configure_evironment(self):
@@ -235,7 +243,8 @@ class Test:
 
         http_ports, pids = init_geth_nodes(self.number_of_nodes, test_path, self.accounts)
         connect_nodes(http_ports)
-        time.sleep(5)
+        # syncronization time
+        time.sleep(2)
         
         self.nodes = [Local_Network(f"geth-{self.name}", 1325, port) for port in http_ports]
 
@@ -274,7 +283,11 @@ class Test:
             self.error = True
             self.add_entry_to_results("", "", "", "", "", "", e)
             self.generate_results_csv()
-            self.end_geth_processes(pids)
+
+            try:
+                self.end_geth_processes(pids)
+            except:
+                pass
 
 class Rol:
     def __init__(self, name, idx : list):

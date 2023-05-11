@@ -154,8 +154,6 @@ class Contract:
         tx = contract.constructor(*casted_args).build_transaction(
             {"gasPrice": w3.eth.gas_price,"from" : account.address, "chainId" : network.chain_id, "nonce" : nonce, "value" : msg_value})
         
-        print("llegue aqui")
-        
         tx_receipt = _sign_and_send_tx(tx, account, w3)
         self.address[network.chain_id] = tx_receipt.contractAddress
 

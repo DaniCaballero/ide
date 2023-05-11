@@ -530,11 +530,12 @@ class Add_Files_IPFS(QDialog):
         return multiple_files, path, name
 
 class Test_Dialog(QDialog):
-    def __init__(self, ui_name, contracts, project_path, test):
+    def __init__(self, ui_name, main_window, test):
         super().__init__()
         uic.loadUi(f"./ui/{ui_name}", self)
-        self.contracts = contracts
-        self.project_path = project_path
+        self.main_window = main_window
+        self.contracts = self.main_window.contracts
+        self.project_path = self.main_window.project.path
         self.instructions = []
         self.test = test
 
@@ -546,9 +547,6 @@ class Test_Dialog(QDialog):
         self.create_test_btn.clicked.connect(self.create_test)
         self.results_btn.clicked.connect(self.see_results)
 
-        # qcombobox = """QComboBox {border: 1px solid #ced4da; border-radius: 4px;padding-left: 10px;background-color: #f2f5ff} QComboBox::drop-down {border: none} QComboBox::down-arrow {image: url(./down.png); width: 12px; height: 12px; margin-right: 15px}
-        #             QPushButton {border-radius: 4px} #Dialog {background-color: white}"""
-
         with open("test_dialogs.qss", "r") as f:
             _styles = f.read()
             self.setStyleSheet(_styles)
@@ -556,10 +554,6 @@ class Test_Dialog(QDialog):
         self.scroll_widget_layout = QVBoxLayout()
         self.scroll_widget_layout.setAlignment(Qt.AlignmentFlag.AlignTop)
         self.scroll_widget.setLayout(self.scroll_widget_layout)
-
-        #self.setStyleSheet(qcombobox)
-
-        #self.test = Test(name=test_name)
 
     def select_instruction(self):
         dlg = Select_Instruction()
@@ -578,7 +572,7 @@ class Test_Dialog(QDialog):
         shadow.setBlurRadius(25)
         shadow.setColor(QColor("#ADAAB5"))
         shadow.setOffset(4)
-        print("instruction ", instruction )
+        #print("instruction ", instruction )
 
         if is_contract_instruction:
             ui_instruction = Instruction_Widget(self.contracts, self.test.accounts, self.test.rols, self.test, instruction)
@@ -590,19 +584,8 @@ class Test_Dialog(QDialog):
         self.scroll_widget_layout.addWidget(ui_instruction)
 
     def save_test(self):
-        data_path = os.path.join(self.project_path, "tests", "test_data.pkl")
-        test_data = {}
+            self.main_window.tests[self.test.name] = self.test
 
-        try:
-            with open(data_path, "rb") as f:
-                test_data = pickle.load(f)
-        except:
-            pass
-
-        test_data[self.test.name] = self.test
-
-        with open(data_path, "wb") as f:
-            pickle.dump(test_data, f)
 
     def create_test(self):
         self.instructions = []
@@ -623,6 +606,10 @@ class Test_Dialog(QDialog):
         self.test.concurrency_number = self.spinBox_2.value()
         self.test.instructions = self.instructions
         self.test.project_path = self.project_path
+        self.test.inst_count = 0
+        self.test.results = []
+        self.test.error = False
+        self.test.nodes = []
 
         try:
             for instruction in self.test.instructions:
@@ -1245,8 +1232,8 @@ class Select_Account_Dialog(QDialog):
             self.listView.selectionModel().setCurrentIndex(ix, QItemSelectionModel.SelectionFlag.Select)   
 
 class Edit_Test_Dialog(Test_Dialog):
-    def __init__(self, contracts, project_path, test):
-        super().__init__("Edit_Test.ui",contracts, project_path, test)
+    def __init__(self, main_window, test):
+        super().__init__("Edit_Test.ui", main_window, test)
 
         # Assigning test attributes as default values
         self.test = test
@@ -1272,6 +1259,7 @@ class Manage_Test(QDialog):
         self.main_window = main_window
         self.project_path = self.main_window.project.path
         self.contracts = self.main_window.contracts
+        self.test_data = self.main_window.tests
 
         self.line_edits = {0 : self.lineEdit, 2 : self.copy_test_name}
 
@@ -1290,7 +1278,7 @@ class Manage_Test(QDialog):
         self.copy_test_name.textChanged.connect(self.enable_disable_btn)
 
         # fill select widgets
-        self.test_data = self.load_test_data()
+        #self.test_data = self.load_test_data()
         self.edit_select.addItems(list(self.test_data.keys()))
         self.copy_select.addItems(list(self.test_data.keys()))
 
@@ -1352,19 +1340,6 @@ class Manage_Test(QDialog):
             print("wii")
         else:
             print("woo")
-
-        
-    def load_test_data(self):
-        data_path = os.path.join(self.project_path, "tests", "test_data.pkl")
-        test_data = {}
-
-        try:
-            with open(data_path, "rb") as f:
-                test_data = pickle.load(f)
-        except:
-            pass
-
-        return test_data
           
 class Manage_Accounts(QDialog):
     def __init__(self, edit_bool, next_dlg, main_window, test):
@@ -1373,8 +1348,6 @@ class Manage_Accounts(QDialog):
 
         self.main_window = main_window
         self.next_dlg = next_dlg
-        self.contracts = self.main_window.contracts
-        self.project_path = self.main_window.project.path
         self.test = test
         self.edit_bool = edit_bool
 
@@ -1430,9 +1403,9 @@ class Manage_Accounts(QDialog):
         dlg = None
 
         if self.edit_bool:
-            dlg = self.next_dlg(self.contracts, self.project_path, self.test)
+            dlg = self.next_dlg(self.main_window, self.test)
         else:
-            dlg = self.next_dlg("Test_v2.ui", self.contracts, self.project_path, self.test)
+            dlg = self.next_dlg("Test_v2.ui", self.main_window, self.test)
 
         if dlg.exec():
             print("a")
