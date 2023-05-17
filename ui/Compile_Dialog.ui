@@ -6,39 +6,28 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>295</width>
-    <height>231</height>
+    <width>329</width>
+    <height>257</height>
    </rect>
   </property>
   <property name="windowTitle">
    <string>Dialog</string>
   </property>
-  <property name="styleSheet">
-   <string notr="true">#Dialog {
-background-color: white;
-}</string>
-  </property>
   <layout class="QVBoxLayout" name="verticalLayout_2">
    <item>
     <widget class="QLabel" name="label">
-     <property name="sizePolicy">
-      <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
-       <horstretch>0</horstretch>
-       <verstretch>0</verstretch>
-      </sizepolicy>
-     </property>
      <property name="styleSheet">
       <string notr="true">font-weight: bold;
-font-size: 18px;
-color: #3f5c73;</string>
+color: #3f5c73;
+font-size: 18px;</string>
      </property>
      <property name="text">
-      <string>Run Script</string>
+      <string>Compile File</string>
      </property>
     </widget>
    </item>
    <item>
-    <spacer name="verticalSpacer_2">
+    <spacer name="verticalSpacer">
      <property name="orientation">
       <enum>Qt::Vertical</enum>
      </property>
@@ -48,7 +37,7 @@ color: #3f5c73;</string>
      <property name="sizeHint" stdset="0">
       <size>
        <width>20</width>
-       <height>24</height>
+       <height>18</height>
       </size>
      </property>
     </spacer>
@@ -61,28 +50,34 @@ color: #3f5c73;</string>
      <item>
       <widget class="QLabel" name="label_2">
        <property name="text">
-        <string>File</string>
-       </property>
-      </widget>
-     </item>
-     <item>
-      <widget class="QComboBox" name="comboBox">
-       <property name="placeholderText">
         <string>Select File</string>
        </property>
       </widget>
      </item>
+     <item>
+      <widget class="QComboBox" name="select_file"/>
+     </item>
     </layout>
    </item>
    <item>
-    <spacer name="verticalSpacer">
+    <widget class="QCheckBox" name="overwrite_btn">
+     <property name="text">
+      <string>Overwrite contract information</string>
+     </property>
+    </widget>
+   </item>
+   <item>
+    <spacer name="verticalSpacer_2">
      <property name="orientation">
       <enum>Qt::Vertical</enum>
+     </property>
+     <property name="sizeType">
+      <enum>QSizePolicy::Expanding</enum>
      </property>
      <property name="sizeHint" stdset="0">
       <size>
        <width>20</width>
-       <height>76</height>
+       <height>51</height>
       </size>
      </property>
     </spacer>

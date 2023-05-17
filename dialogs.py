@@ -26,8 +26,8 @@ def add_widgets_to_layout(layout, widget_list):
         layout.addWidget(widget)
 
 class Create_Project_Dialog(QDialog):
-    def __init__(self):
-        super().__init__()
+    def __init__(self, parent=None):
+        super().__init__(parent)
         uic.loadUi('./ui/Create_Project_Dialog.ui', self)
 
         self.project_name.textChanged.connect(self.enable_disable_buttons)
@@ -64,20 +64,11 @@ class Compile_Dialog(QDialog):
     def __init__(self, parent=None):
         super().__init__(parent)
         self.app = parent
+        uic.loadUi("./ui/Compile_Dialog.ui", self)
         self.setWindowTitle("Compile options")
 
-        self.button_box = get_button_box(self)
-
-        self.select_file = QComboBox(self)
         self.select_file.currentIndexChanged.connect(self.set_enabled_button)
-
-        self.overwrite_btn = QCheckBox("Overwrite contract information")
         self.overwrite_btn.setChecked(True)
-
-        self.layout = QVBoxLayout()
-        msg = QLabel("Select a file to compile")
-        add_widgets_to_layout(self.layout, [msg, self.select_file, self.overwrite_btn, self.button_box])
-        self.setLayout(self.layout)
 
     def set_files(self, files_names):
         self.select_file.addItems(files_names)
@@ -88,9 +79,9 @@ class Compile_Dialog(QDialog):
 
     def set_enabled_button(self):
         if self.select_file.currentText() != "":
-            self.button_box.button(QDialogButtonBox.StandardButton.Ok).setEnabled(True)
+            self.buttonBox.button(QDialogButtonBox.StandardButton.Ok).setEnabled(True)
         else:
-            self.button_box.button(QDialogButtonBox.StandardButton.Ok).setEnabled(False)
+            self.buttonBox.button(QDialogButtonBox.StandardButton.Ok).setEnabled(False)
 
 # net list, account list and contract name
 class Deploy_Dialog(QDialog):
@@ -98,31 +89,16 @@ class Deploy_Dialog(QDialog):
 
     def __init__(self, parent):
         super().__init__(parent)
-
+        uic.loadUi("./ui/Deploy_Dialog.ui", self)
         self.setWindowTitle("Deploy options")
 
-        self.button_box = get_button_box(self)
-
-        self.select_contract = QComboBox(self)
         self.select_contract.currentIndexChanged.connect(self.set_button_enabled)
         self.select_contract.currentIndexChanged.connect(self.request_versions)
 
-        self.select_version = QComboBox()
-
-        self.constructor_args = QLineEdit(self)
-        # constructor could or could not have arguments
-        #self.constructor_args.textChanged.connect(self.set_button_enabled)
-
-        self.select_network = QComboBox(self)
         self.select_network.currentIndexChanged.connect(self.update_accounts)
         self.select_network.currentIndexChanged.connect(self.set_button_enabled)
 
-        self.select_account = QComboBox(self)
         self.select_account.currentIndexChanged.connect(self.set_button_enabled)
-
-        self.layout = QVBoxLayout()
-        add_widgets_to_layout(self.layout, [self.select_contract, self.select_version, self.constructor_args, self.select_network, self.select_account, self.button_box])
-        self.setLayout(self.layout)
 
     def set_combo_contracts(self, contract_names):
         self.select_contract.addItems(contract_names)
@@ -159,9 +135,9 @@ class Deploy_Dialog(QDialog):
 
     def set_button_enabled(self):
         if self.select_contract.currentText() != "" and self.select_network.currentText() != "" and self.select_account.currentText() != "":
-            self.button_box.button(QDialogButtonBox.StandardButton.Ok).setEnabled(True)
+            self.buttonBox.button(QDialogButtonBox.StandardButton.Ok).setEnabled(True)
         else:
-            self.button_box.button(QDialogButtonBox.StandardButton.Ok).setEnabled(False)
+            self.buttonBox.button(QDialogButtonBox.StandardButton.Ok).setEnabled(False)
 
     def update_accounts(self):
         names = []
@@ -174,7 +150,6 @@ class Deploy_Dialog(QDialog):
         
         self.select_account.clear()
         self.select_account.addItems(names)
-            
 
 class Add_Account_Dialog(QDialog):
     def __init__(self, parent=None):
@@ -212,23 +187,14 @@ class Add_Account_Dialog(QDialog):
 class Add_Node_Dialog(QDialog):
     def __init__(self, parent=None):
         super().__init__(parent)
-
-        self.setWindowTitle("Add account")
+        uic.loadUi("./ui/Node_Provider_Dialog.ui", self)
+        self.setWindowTitle("Node Provider Dialog")
 
         networks = ["mainnet", "goerli", "sepolia"]
-        self.select_network = QComboBox(self)
+
         self.select_network.addItems(networks)
         self.select_network.currentIndexChanged.connect(self.set_enabled_button)
-
-        self.key_label = QLabel("Api Key: ")
-        self.key_input = QLineEdit(self)
         self.key_input.textChanged.connect(self.set_enabled_button)
-
-        self.button_box = get_button_box(self)
-
-        self.layout = QVBoxLayout()
-        add_widgets_to_layout(self.layout, [self.select_network, self.key_label, self.key_input, self.button_box])
-        self.setLayout(self.layout)
 
     def get_network(self):
         return self.select_network.currentText()
@@ -238,9 +204,9 @@ class Add_Node_Dialog(QDialog):
 
     def set_enabled_button(self):
         if self.select_network.currentText() != "" and self.key_input.text() != "":
-            self.button_box.button(QDialogButtonBox.StandardButton.Ok).setEnabled(True)
+            self.buttonBox.button(QDialogButtonBox.StandardButton.Ok).setEnabled(True)
         else:
-            self.button_box.button(QDialogButtonBox.StandardButton.Ok).setEnabled(False)
+            self.buttonBox.button(QDialogButtonBox.StandardButton.Ok).setEnabled(False)
 
 class Left_Widget(QFrame):
     def __init__(self):
@@ -454,30 +420,23 @@ class Project_Widget(QWidget):
 class IPFS_Token_Dialog(QDialog):
     def __init__(self, parent=None):
         super().__init__(parent)
-
+        uic.loadUi("./ui/IPFS_Provider_Dialog.ui", self)
         self.setWindowTitle("Add W3Storage Token")
-        self.button_box = get_button_box(self)
-        self.layout = QVBoxLayout()
 
-        self.line_edit = QLineEdit()
         self.line_edit.textChanged.connect(self.set_enabled_button)
-
-        add_widgets_to_layout(self.layout, [self.line_edit, self.button_box])
-
-        self.setLayout(self.layout)
 
     def get_ipfs_token(self):
         return self.line_edit.text()
 
     def set_enabled_button(self):
         if self.line_edit.text() != "":
-            self.button_box.button(QDialogButtonBox.StandardButton.Ok).setEnabled(True)
+            self.buttonBox.button(QDialogButtonBox.StandardButton.Ok).setEnabled(True)
         else:
-            self.button_box.button(QDialogButtonBox.StandardButton.Ok).setEnabled(False)
+            self.buttonBox.button(QDialogButtonBox.StandardButton.Ok).setEnabled(False)
 
 class Add_Files_IPFS(QDialog):
-    def __init__(self, project_path):
-        super().__init__()
+    def __init__(self, project_path, parent=None):
+        super().__init__(parent)
         uic.loadUi("./ui/Add_Files_IPFS.ui", self)
 
         self.project_path = project_path
@@ -1337,14 +1296,18 @@ class Manage_Test(QDialog):
                 return # meanwhile
 
         if dlg.exec():
-            print("wii")
-        else:
-            print("woo")
-          
+            pass
+
+        self.close()
+
 class Manage_Accounts(QDialog):
     def __init__(self, edit_bool, next_dlg, main_window, test):
         super().__init__()
         uic.loadUi("./ui/Manage_Accounts.ui", self)
+
+        with open("dialog_styles.qss", "r") as f:
+            _styles = f.read()
+            self.setStyleSheet(_styles)
 
         self.main_window = main_window
         self.next_dlg = next_dlg
@@ -1408,9 +1371,9 @@ class Manage_Accounts(QDialog):
             dlg = self.next_dlg("Test_v2.ui", self.main_window, self.test)
 
         if dlg.exec():
-            print("a")
-        else:
             pass
+
+        self.close()
 
 class Instruction_Balance_Widget(QWidget):
     def __init__(self, test, instruction = None):
@@ -1468,8 +1431,8 @@ class Instruction_Balance_Widget(QWidget):
         return Instruction(contract, version, function_name, exec_n, [], self.msg_values, self.prev_output_key, time_interval, self.instruction_accounts)
 
 class Select_Script(QDialog):
-    def __init__(self, scripts):
-        super().__init__()
+    def __init__(self, scripts, parent=None):
+        super().__init__(parent)
         uic.loadUi("./ui/Select_Script_Dlg.ui", self)
 
         self.comboBox.addItems(scripts) 

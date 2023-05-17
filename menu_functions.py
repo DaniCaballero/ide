@@ -27,7 +27,7 @@ def lambda_func(function_name, *arguments):
 
 
 def compile_file(state):
-    dlg = Compile_Dialog()
+    dlg = Compile_Dialog(state)
     try:
         contracts_folder_path = os.path.join(state.project.path, "contracts")
         files_paths = os.listdir(contracts_folder_path)
@@ -69,7 +69,7 @@ def generate_account(state):
     pass
 
 def add_node_provider(state):
-    dlg = Add_Node_Dialog()
+    dlg = Add_Node_Dialog(state)
     if dlg.exec():
         network_name = dlg.get_network()
         network_key = dlg.get_key()

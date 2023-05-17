@@ -110,7 +110,7 @@ class MainWindow(QMainWindow):
         self.stacked_layout.setCurrentIndex(1)
 
     def init_project(self):
-        dlg = Create_Project_Dialog()
+        dlg = Create_Project_Dialog(self)
 
         if dlg.exec():
             try:
@@ -292,7 +292,7 @@ class MainWindow(QMainWindow):
 
         print("scripts", files)
 
-        dlg = Select_Script(files)
+        dlg = Select_Script(files, self)
 
         if dlg.exec():
             selected_file = dlg.comboBox.currentText()
@@ -323,7 +323,7 @@ class MainWindow(QMainWindow):
             #subprocess.Popen(["python", tmp_path])
             
     def add_to_ipfs(self):
-        dlg = Add_Files_IPFS(self.project.path)
+        dlg = Add_Files_IPFS(self.project.path, self)
 
         if dlg.exec():
             multiple_files, path, name = dlg.get_input()
