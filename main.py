@@ -1,6 +1,6 @@
 from PyQt6.QtCore import QSize, Qt, QThread, QProcess
 from PyQt6.QtWidgets import (QApplication, QWidget, QMainWindow, QHBoxLayout, QTabWidget, QStackedLayout, QSplitter, 
-                            QMessageBox, QErrorMessage, QTextBrowser)
+                            QMessageBox, QErrorMessage, QTextBrowser, QMenu)
 from menu_functions import *
 from dialogs import (Compile_Dialog, Add_Account_Dialog, Add_Node_Dialog, Deploy_Dialog, IPFS_Token_Dialog, Functions_Layout, 
                     Project_Widget, Left_Widget, Test_Dialog, Create_Project_Dialog, Manage_Test, Add_Files_IPFS, Select_Script)
@@ -40,6 +40,7 @@ class MainWindow(QMainWindow):
         self.output.setMaximumHeight(400)
         self.output.setFrameStyle(0)
 
+        self.menu_actions = []
         self.create_menu_bar()
 
         self.editor_tab = QTabWidget()
@@ -102,12 +103,15 @@ class MainWindow(QMainWindow):
         create_menu_option("Tests", ["Create Test", "Visualize Blockchain Activity"], [self.create_test, self.visualizer], ["", ""], menu, self)
         create_menu_option("Run", ["Select Script", "Run Active File"], [self.run_script], ["", ""], menu, self)
         
-
     def project_button_clicked(self):
         self.stacked_layout.setCurrentIndex(0)
 
     def function_button_clicked(self):
         self.stacked_layout.setCurrentIndex(1)
+
+    def enable_menu_actions(self):
+        for item in self.menu_actions:
+            item.setEnabled(True)
 
     def init_project(self):
         dlg = Create_Project_Dialog(self)
@@ -132,6 +136,7 @@ class MainWindow(QMainWindow):
 
                 #self.output.append(f"Project initialized at {path}\n")
                 self.statusBar().showMessage(f"Project initialized at {path}", 2000)
+                self.enable_menu_actions()
                 self.project_widget.add_tree_view(path)
             except:
                 self.statusBar().showMessage(f"Unable to initialize project at {path}", 2500)
@@ -159,6 +164,7 @@ class MainWindow(QMainWindow):
 
                 #self.output.append(f"Project found at {path}\n")
                 self.statusBar().showMessage(f"Project found at {path}", 2000)
+                self.enable_menu_actions()
                 self.project_widget.add_tree_view(path)
             except:
                 self.statusBar().showMessage(f"Unable to open project at {path}", 2500)

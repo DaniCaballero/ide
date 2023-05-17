@@ -16,11 +16,16 @@ def create_menu_option(option_name, label_list, command_list, shortcut_list, men
     for label, command, shortcut in zip(label_list, command_list, shortcut_list):
         menu_item_action = QAction(label, window)
         menu_item_action.triggered.connect(command)
+        menu_item_action.setEnabled(False)
 
         if shortcut != "":
             menu_item_action.setShortcut(shortcut)
 
+        if option_name == "Project":
+            menu_item_action.setEnabled(True)
+
         menu_item.addAction(menu_item_action)
+        window.menu_actions.append(menu_item_action)
     
 def lambda_func(function_name, *arguments):
     return lambda : function_name(*arguments)
