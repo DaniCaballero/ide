@@ -10,7 +10,7 @@ QComboBox::drop-down {
 }
 
 QComboBox::down-arrow {
-    image: url(./down.png); 
+    image: url("./ui/Icons/down.png"); 
     width: 12px; 
     height: 12px; 
     margin-right: 15px;
@@ -29,14 +29,14 @@ QDoubleSpinBox::up-button {
 }
 
 QDoubleSpinBox::down-arrow {
-    image: url(./down.png); 
+    image: url("./ui/Icons/down.png"); 
     width: 12px; 
     height: 12px; 
     margin-right: 15px;
 }
 
 QDoubleSpinBox::up-arrow {
-    image: url(./up-arrow.png); 
+    image: url("./ui/Icons/up-arrow.png"); 
     width: 12px; 
     height: 12px; 
     margin-right: 15px
@@ -51,14 +51,14 @@ QSpinBox::up-button {
 }
 
 QSpinBox::down-arrow {
-    image: url(./down.png); 
+    image: url("./ui/Icons/down.png"); 
     width: 12px; 
     height: 12px; 
     margin-right: 15px;
 }
 
 QSpinBox::up-arrow {
-    image: url(./up-arrow.png); 
+    image: url("./ui/Icons/up-arrow.png"); 
     width: 12px; 
     height: 12px; 
     margin-right: 15px;

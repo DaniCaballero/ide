@@ -1,6 +1,6 @@
-from contract import Contract
-from network import Network, Local_Network
-from account import Account, Local_Account
+from blockchain.contract import Contract
+from blockchain.network import Network, Local_Network
+from blockchain.account import Account, Local_Account
 import os, json
 
 def load_project_data():

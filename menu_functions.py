@@ -1,14 +1,14 @@
 from PyQt6.QtGui import QAction
 from PyQt6.QtWidgets import QFileDialog, QTextEdit
-from project import Project, Editor
+from project.project import Project, Editor
 from pathlib import Path
-from compile import compile
+from blockchain.compile import compile
 import threading, subprocess, shutil, os
-from dialogs import Compile_Dialog, Add_Account_Dialog, Add_Node_Dialog, Deploy_Dialog, IPFS_Token_Dialog
-from account import Account, add_local_accounts
-from network import Network, init_ganache
-from ipfs import IPFS
-from contract import find_replace_split
+from dialogs.dialogs import Compile_Dialog, Add_Account_Dialog, Add_Node_Dialog, Deploy_Dialog, IPFS_Token_Dialog
+from blockchain.account import Account, add_local_accounts
+from blockchain.network import Network, init_ganache
+from blockchain.ipfs import IPFS
+from blockchain.contract import find_replace_split
 
 def create_menu_option(option_name, label_list, command_list, shortcut_list, menu, window):
     menu_item = menu.addMenu(option_name)

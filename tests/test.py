@@ -1,10 +1,10 @@
 import random, pandas, time, threading, blocksmith, json, os, signal, decimal, psutil
 from PyQt6.QtCore import QThread, QObject, pyqtSignal, QAbstractTableModel, Qt
-from account import Account, Test_Account
-from geth_nodes import init_geth_nodes, connect_nodes
-from network import Local_Network
+from blockchain.account import Account, Test_Account
+from .geth_nodes import init_geth_nodes, connect_nodes
+from blockchain.network import Local_Network
 from web3 import Web3, datastructures, middleware
-from contract import find_replace_split, _sign_and_send_tx
+from blockchain.contract import find_replace_split, _sign_and_send_tx
 
 class CustomThread(threading.Thread):
     '''Custom class that saves any exception occured during thread execution and reraises it 

@@ -2,13 +2,13 @@ from PyQt6.QtCore import QSize, Qt, QThread, QProcess
 from PyQt6.QtWidgets import (QApplication, QWidget, QMainWindow, QHBoxLayout, QTabWidget, QStackedLayout, QSplitter, 
                             QMessageBox, QErrorMessage, QTextBrowser, QMenu)
 from menu_functions import *
-from dialogs import (Compile_Dialog, Add_Account_Dialog, Add_Node_Dialog, Deploy_Dialog, IPFS_Token_Dialog, Functions_Layout, 
+from dialogs.dialogs import (Compile_Dialog, Add_Account_Dialog, Add_Node_Dialog, Deploy_Dialog, IPFS_Token_Dialog, Functions_Layout, 
                     Project_Widget, Left_Widget, Test_Dialog, Create_Project_Dialog, Manage_Test, Add_Files_IPFS, Select_Script)
-from visualizador import Visualizer, Select_Test_Visualizer
-from account import Account, add_local_accounts
-from network import Network, init_ganache
-from ipfs import IPFS
-from project import Editor, Project, Code_Output
+from tests.visualizador import Visualizer, Select_Test_Visualizer
+from blockchain.account import Account, add_local_accounts
+from blockchain.network import Network, init_ganache
+from blockchain.ipfs import IPFS
+from project.project import Editor, Project, Code_Output
 from PyQt6.QtGui import QAction, QColor, QPalette, QIcon, QFont, QFontDatabase
 import os, subprocess, psutil, sys, pickle, time, json
 
@@ -25,11 +25,11 @@ class MainWindow(QMainWindow):
         self.tests = {}
         self.ipfs = ""
         
-        with open("main_styles.qss", "r") as f:
+        with open("./ui/Stylesheets/main_styles.qss", "r") as f:
             _styles = f.read()
             self.setStyleSheet(_styles)
 
-        font_id = QFontDatabase.addApplicationFont("RobotoMono.ttf")
+        font_id = QFontDatabase.addApplicationFont("./ui/Fonts/RobotoMono.ttf")
         self.font_families = QFontDatabase.applicationFontFamilies(font_id)
 
         editor = Editor(font_families=self.font_families)

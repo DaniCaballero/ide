@@ -6,10 +6,10 @@ from PyQt6.QtCore import QSize, Qt, QDir, pyqtSignal, QThread, QItemSelectionMod
 from PyQt6 import uic, QtWidgets
 import os, threading, decimal, shutil, pickle, copy, json
 from pathlib import Path
-from collapsible import CollapsibleBox
-from contract import find_replace_split
-from project import Editor, Select_Accounts_Model
-from test import Sequence, Random, File, Prev_Output, Test, Instruction, Worker, List_Arg, Argument, ResultsModel, Time_Arg
+from .collapsible import CollapsibleBox
+from blockchain.contract import find_replace_split
+from project.project import Editor, Select_Accounts_Model
+from tests.test import Sequence, Random, File, Prev_Output, Test, Instruction, Worker, List_Arg, Argument, ResultsModel, Time_Arg
 from web3 import Web3
 
 
@@ -28,7 +28,7 @@ def add_widgets_to_layout(layout, widget_list):
 class Create_Project_Dialog(QDialog):
     def __init__(self, parent=None):
         super().__init__(parent)
-        uic.loadUi('./ui/Create_Project_Dialog.ui', self)
+        uic.loadUi('./ui/Qt/Create_Project_Dialog.ui', self)
 
         self.project_name.textChanged.connect(self.enable_disable_buttons)
         self.project_path.textChanged.connect(self.enable_disable_buttons)
@@ -64,7 +64,7 @@ class Compile_Dialog(QDialog):
     def __init__(self, parent=None):
         super().__init__(parent)
         self.app = parent
-        uic.loadUi("./ui/Compile_Dialog.ui", self)
+        uic.loadUi("./ui/Qt/Compile_Dialog.ui", self)
         self.setWindowTitle("Compile options")
 
         self.select_file.currentIndexChanged.connect(self.set_enabled_button)
@@ -89,7 +89,7 @@ class Deploy_Dialog(QDialog):
 
     def __init__(self, parent):
         super().__init__(parent)
-        uic.loadUi("./ui/Deploy_Dialog.ui", self)
+        uic.loadUi("./ui/Qt/Deploy_Dialog.ui", self)
         self.setWindowTitle("Deploy options")
 
         self.select_contract.currentIndexChanged.connect(self.set_button_enabled)
@@ -154,7 +154,7 @@ class Deploy_Dialog(QDialog):
 class Add_Account_Dialog(QDialog):
     def __init__(self, parent=None):
         super().__init__(parent)
-        uic.loadUi("./ui/Add_Account.ui",self)
+        uic.loadUi("./ui/Qt/Add_Account.ui",self)
 
         self.setWindowTitle("Add account")
 
@@ -187,7 +187,7 @@ class Add_Account_Dialog(QDialog):
 class Add_Node_Dialog(QDialog):
     def __init__(self, parent=None):
         super().__init__(parent)
-        uic.loadUi("./ui/Node_Provider_Dialog.ui", self)
+        uic.loadUi("./ui/Qt/Node_Provider_Dialog.ui", self)
         self.setWindowTitle("Node Provider Dialog")
 
         networks = ["mainnet", "goerli", "sepolia"]
@@ -217,12 +217,12 @@ class Left_Widget(QFrame):
 
         self.setStyleSheet("background-color: #3f5c73;")
         
-        self.project_button.setIcon(QIcon("./file-and-folder-white.png"))
+        self.project_button.setIcon(QIcon("./ui/Icons/file-and-folder-white.png"))
         self.project_button.setIconSize(QSize(30,30))
         self.project_button.setStyleSheet("border: none;")
         
         self.function_button = QToolButton(self)
-        self.function_button.setIcon(QIcon("./smart-contracts-white.png"))
+        self.function_button.setIcon(QIcon("./ui/Icons/smart-contracts-white.png"))
         self.function_button.setIconSize(QSize(30,30))
         self.function_button.setStyleSheet("border: none;")
 
@@ -263,7 +263,7 @@ class Functions_Layout(QWidget):
         self.select_account.setMinimumWidth(self.width())
 
         self.copy_account_btn = QPushButton()
-        self.copy_account_btn.setIcon(QIcon("./copy.png"))
+        self.copy_account_btn.setIcon(QIcon("./ui/Icons/copy.png"))
         self.copy_account_btn.clicked.connect(self.copy_account)
         #self.select_account.addItems(self.app.accounts.keys())
         #add_widgets_to_layout(select_layout, [select_account_label, self.select_account])
@@ -420,7 +420,7 @@ class Project_Widget(QWidget):
 class IPFS_Token_Dialog(QDialog):
     def __init__(self, parent=None):
         super().__init__(parent)
-        uic.loadUi("./ui/IPFS_Provider_Dialog.ui", self)
+        uic.loadUi("./ui/Qt/IPFS_Provider_Dialog.ui", self)
         self.setWindowTitle("Add W3Storage Token")
 
         self.line_edit.textChanged.connect(self.set_enabled_button)
@@ -437,7 +437,7 @@ class IPFS_Token_Dialog(QDialog):
 class Add_Files_IPFS(QDialog):
     def __init__(self, project_path, parent=None):
         super().__init__(parent)
-        uic.loadUi("./ui/Add_Files_IPFS.ui", self)
+        uic.loadUi("./ui/Qt/Add_Files_IPFS.ui", self)
 
         self.project_path = project_path
 
@@ -491,7 +491,7 @@ class Add_Files_IPFS(QDialog):
 class Test_Dialog(QDialog):
     def __init__(self, ui_name, main_window, test):
         super().__init__()
-        uic.loadUi(f"./ui/{ui_name}", self)
+        uic.loadUi(f"./ui/Qt/{ui_name}", self)
         self.main_window = main_window
         self.contracts = self.main_window.contracts
         self.project_path = self.main_window.project.path
@@ -506,7 +506,7 @@ class Test_Dialog(QDialog):
         self.create_test_btn.clicked.connect(self.create_test)
         self.results_btn.clicked.connect(self.see_results)
 
-        with open("test_dialogs.qss", "r") as f:
+        with open("./ui/Stylesheets/test_dialogs.qss", "r") as f:
             _styles = f.read()
             self.setStyleSheet(_styles)
                     
@@ -619,7 +619,7 @@ class Test_Dialog(QDialog):
 class Select_Instruction(QDialog):
     def __init__(self):
         super().__init__()
-        uic.loadUi("./ui/Select_Instruction.ui", self)
+        uic.loadUi("./ui/Qt/Select_Instruction.ui", self)
 
         self.contract_radio.toggled.connect(self.enable_ok)
         self.balance_radio.toggled.connect(self.enable_ok)
@@ -632,7 +632,7 @@ class Select_Instruction(QDialog):
 class Argument_Dialog(QDialog):
     def __init__(self, ui_file_name, test, arg = None):
         super().__init__()
-        uic.loadUi(f"./ui/{ui_file_name}", self)
+        uic.loadUi(f"./ui/Qt/{ui_file_name}", self)
         self.current_toggled = None
         self.arg = arg
 
@@ -892,7 +892,7 @@ class Select_Ether_Dialog(Argument_Dialog):
 class Instruction_Widget(QWidget):
     def __init__(self, contracts, accounts, rols, test, instruction=None):
         super().__init__()
-        uic.loadUi("./ui/Instruction.ui", self)
+        uic.loadUi("./ui/Qt/Instruction.ui", self)
         self.contracts = contracts
         self.arguments = []
         self.argument_list = []
@@ -908,7 +908,7 @@ class Instruction_Widget(QWidget):
         self.select_contract.addItems(self.contracts.keys())
         self.select_contract.currentIndexChanged.connect(self.set_versions)
 
-        self.delete_btn.setIcon(QIcon('./clear.png'))
+        self.delete_btn.setIcon(QIcon('./ui/Icons/clear.png'))
         self.delete_btn.clicked.connect(self.delete_widget)
         
         self.select_version.currentIndexChanged.connect(self.set_functions)
@@ -1018,7 +1018,7 @@ class Instruction_Widget(QWidget):
 class Argument_Widget_v2(QWidget):
     def __init__(self, test, arg_info, arg = None):
         super().__init__()
-        uic.loadUi("./ui/Argument_Widget_v2.ui", self)
+        uic.loadUi("./ui/Qt/Argument_Widget_v2.ui", self)
 
         self.arg = arg
         self.arg_name = arg_info[0]
@@ -1056,7 +1056,7 @@ class Argument_Widget_v2(QWidget):
 class List_Arguments_Dialog(QDialog):
     def __init__(self, args, accounts, rols, test, instruction=None):
         super().__init__()
-        uic.loadUi("./ui/List_Arguments_Dialog.ui", self)
+        uic.loadUi("./ui/Qt/List_Arguments_Dialog.ui", self)
 
         self.resize(400,400)
 
@@ -1162,7 +1162,7 @@ class List_Arguments_Dialog(QDialog):
 class Select_Account_Dialog(QDialog):
     def __init__(self, accounts, rols, prev_selected_accounts):
         super().__init__()
-        uic.loadUi("./ui/Select_Account_Dialog.ui", self)
+        uic.loadUi("./ui/Qt/Select_Account_Dialog.ui", self)
 
         self.model = Select_Accounts_Model(accounts)
         self.listView.setModel(self.model)
@@ -1213,7 +1213,7 @@ class Edit_Test_Dialog(Test_Dialog):
 class Manage_Test(QDialog):
     def __init__(self, main_window):
         super().__init__()
-        uic.loadUi("./ui/Manage_Test.ui", self)
+        uic.loadUi("./ui/Qt/Manage_Test.ui", self)
 
         self.main_window = main_window
         self.project_path = self.main_window.project.path
@@ -1303,9 +1303,9 @@ class Manage_Test(QDialog):
 class Manage_Accounts(QDialog):
     def __init__(self, edit_bool, next_dlg, main_window, test):
         super().__init__()
-        uic.loadUi("./ui/Manage_Accounts.ui", self)
+        uic.loadUi("./ui/Qt/Manage_Accounts.ui", self)
 
-        with open("dialog_styles.qss", "r") as f:
+        with open("./ui/Stylesheets/dialog_styles.qss", "r") as f:
             _styles = f.read()
             self.setStyleSheet(_styles)
 
@@ -1378,7 +1378,7 @@ class Manage_Accounts(QDialog):
 class Instruction_Balance_Widget(QWidget):
     def __init__(self, test, instruction = None):
         super().__init__()
-        uic.loadUi("./ui/Instruction_Balance.ui", self)
+        uic.loadUi("./ui/Qt/Instruction_Balance.ui", self)
 
         self.test = test
         self.instruction = instruction
@@ -1388,7 +1388,7 @@ class Instruction_Balance_Widget(QWidget):
         self.is_defined = False
         self.prev_output_key = None
 
-        self.delete_btn.setIcon(QIcon('./clear.png'))
+        self.delete_btn.setIcon(QIcon('./ui/Icons/clear.png'))
 
         self.select_accounts_btn.clicked.connect(self.select_accounts)
         self.delete_btn.clicked.connect(self.delete_widget)
@@ -1433,14 +1433,14 @@ class Instruction_Balance_Widget(QWidget):
 class Select_Script(QDialog):
     def __init__(self, scripts, parent=None):
         super().__init__(parent)
-        uic.loadUi("./ui/Select_Script_Dlg.ui", self)
+        uic.loadUi("./ui/Qt/Select_Script_Dlg.ui", self)
 
         self.comboBox.addItems(scripts) 
 
 class Add_Existing_Accounts(QDialog):
     def __init__(self, accounts):
         super().__init__()
-        uic.loadUi("./ui/Add_Existing_Accounts.ui", self)
+        uic.loadUi("./ui/Qt/Add_Existing_Accounts.ui", self)
         
         self.accounts = accounts
         self.model = Select_Accounts_Model(accounts)
@@ -1460,7 +1460,7 @@ class Add_Existing_Accounts(QDialog):
 class Results_Dialog(QDialog):
     def __init__(self, results):
         super().__init__()
-        uic.loadUi("./ui/Results_Dialog.ui", self)
+        uic.loadUi("./ui/Qt/Results_Dialog.ui", self)
 
         self.model = ResultsModel(results)
 
@@ -1480,6 +1480,6 @@ class Results_Dialog(QDialog):
 class Select_Output_Index(QDialog):
     def __init__(self):
         super().__init__()
-        uic.loadUi("./ui/Select_Output_Index.ui", self)
+        uic.loadUi("./ui/Qt/Select_Output_Index.ui", self)
 
 

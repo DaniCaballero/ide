@@ -4,7 +4,7 @@ from pathlib import Path
 from PyQt6.Qsci import QsciScintilla, QsciLexerPython, QsciLexerJavaScript, QsciAPIs
 from PyQt6.QtGui import QColor, QFont
 from PyQt6.QtCore import QAbstractListModel, Qt
-from solidity_lexer import CustomSolidityLexer
+from .solidity_lexer import CustomSolidityLexer
 
 class Project:
     def __init__(self, path=""):

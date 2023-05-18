@@ -1,6 +1,6 @@
 from solcx import compile_files, install_solc, get_installed_solc_versions, get_installable_solc_versions
 from packaging.version import Version
-from contract import Contract
+from .contract import Contract
 from pathlib import Path
 import json, os, operator, re
 
