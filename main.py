@@ -10,7 +10,7 @@ from blockchain.network import Network, init_ganache
 from blockchain.ipfs import IPFS
 from project.project import Editor, Project, Code_Output
 from PyQt6.QtGui import QAction, QColor, QPalette, QIcon, QFont, QFontDatabase
-import os, subprocess, psutil, sys, pickle, time, json
+import os, subprocess, psutil, sys, pickle, time, json, pathlib
 
 class MainWindow(QMainWindow):
     def __init__(self):
@@ -24,6 +24,9 @@ class MainWindow(QMainWindow):
         self.contracts = {}
         self.tests = {}
         self.ipfs = ""
+
+        # QProcess, assigned when executing a script
+        self.p = None 
         
         with open("./ui/Stylesheets/main_styles.qss", "r") as f:
             _styles = f.read()
@@ -113,61 +116,65 @@ class MainWindow(QMainWindow):
         for item in self.menu_actions:
             item.setEnabled(True)
 
+    # copy files needed to run a script from user project
+    def copy_scripts_folder(self, path):
+        src = "./scripts_files"
+        dst = os.path.join(path, "scripts", "scripts_files")
+
+        shutil.copytree(src, dst)
+
     def init_project(self):
-        dlg = Create_Project_Dialog(self)
+        if self.project.path == "":
+            dlg = Create_Project_Dialog(self)
 
-        if dlg.exec():
-            try:
-                project_name = dlg.project_name.text()
-                project_path = dlg.project_path.text()
-                path = os.path.join(project_path, project_name)
-                os.mkdir(path)
-                
-                self.project.path = path
-                self.project.init_project()
-                            
-                init_ganache(self)
-                time.sleep(3)
-                add_local_accounts(self)
-                self.functions_widget.update_networks()
+            if dlg.exec():
+                try:
+                    project_name = dlg.project_name.text()
+                    project_path = dlg.project_path.text()
+                    path = os.path.join(project_path, project_name)
+                    os.mkdir(path)
+                    
+                    self.project.path = path
+                    self.project.init_project()
+                                
+                    init_ganache(self)
+                    # must wait a bit so accounts file gets created and can be added 
+                    time.sleep(3)
+                    self.copy_scripts_folder(path)
+                    add_local_accounts(self)
+                    self.functions_widget.update_networks()
 
-                with open("./current_project_path.txt", "w") as f:
-                    f.write(path)
-
-                #self.output.append(f"Project initialized at {path}\n")
-                self.statusBar().showMessage(f"Project initialized at {path}", 2000)
-                self.enable_menu_actions()
-                self.project_widget.add_tree_view(path)
-            except:
-                self.statusBar().showMessage(f"Unable to initialize project at {path}", 2500)
+                    self.statusBar().showMessage(f"Project initialized at {path}", 5000)
+                    self.enable_menu_actions()
+                    self.project_widget.add_tree_view(path)
+                except:
+                    self.statusBar().showMessage(f"Unable to initialize project at {path}", 5000)
 
     def open_project(self):
-        if self.project.path != "":
-            self.save_data()
-            self.project = Project()
+        if self.project.path == "":
+            #self.save_data()
+            #self.project = Project()
             
-        path = QFileDialog.getExistingDirectory(self, "Select Directory")
-        is_project = self.project.exists_project(path)
+            path = QFileDialog.getExistingDirectory(self, "Select Directory")
+            is_project = self.project.exists_project(path)
 
-        if is_project:
-            try:
-                self.project.path = path
-                
-                init_ganache(self)
-                self.load_data()
-                add_local_accounts(self)
+            if is_project:
+                try:
+                    self.project.path = path
+                    
+                    init_ganache(self)
+                    self.load_data()
+                    add_local_accounts(self)
 
-                self.functions_widget.update_networks()
-                
-                with open("./current_project_path.txt", "w") as f:
-                    f.write(path)
+                    self.functions_widget.update_networks()
 
-                #self.output.append(f"Project found at {path}\n")
-                self.statusBar().showMessage(f"Project found at {path}", 2000)
-                self.enable_menu_actions()
-                self.project_widget.add_tree_view(path)
-            except:
-                self.statusBar().showMessage(f"Unable to open project at {path}", 2500)
+                    #self.output.append(f"Project found at {path}\n")
+                    self.statusBar().showMessage(f"Project found at {path}", 2000)
+                    self.enable_menu_actions()
+                        
+                    self.project_widget.add_tree_view(path)
+                except:
+                    self.statusBar().showMessage(f"Unable to open project at {path}", 2500)
 
     def delete_project(self):
         path = QFileDialog.getExistingDirectory(self, "Select Directory")
@@ -264,9 +271,7 @@ class MainWindow(QMainWindow):
         dlg = Manage_Test(self)
 
         if dlg.exec():
-            print("YAY")
-        else:
-            print("WAINS")
+            pass
 
     def visualizer(self):
         #dlg = Visualizer(2, "C:\\Users\\Asus\\Documents\\Tesis\\Vote\\tests\\logss\\logs")
@@ -290,6 +295,18 @@ class MainWindow(QMainWindow):
                 if vis_dlg.exec():
                     pass
 
+    def handle_script_stdout(self):
+        data = self.p.readAllStandardOutput()
+        stdout = bytes(data).decode("utf8")
+        self.add_to_output(stdout)
+
+    def handle_script_stderr(self):
+        data = self.p.readAllStandardError()
+        stderr = bytes(data).decode("utf8")
+        self.add_to_output(stderr)
+
+    def script_finished(self):
+        self.p = None
 
     def run_script(self):
         path = os.path.join(self.project.path, "scripts")
@@ -301,30 +318,30 @@ class MainWindow(QMainWindow):
         dlg = Select_Script(files, self)
 
         if dlg.exec():
-            selected_file = dlg.comboBox.currentText()
-            #load_objs_path = os.path.join(os.getcwd(), "py_loader")
-            load_objs_path = os.getcwd()
-            print("load_path", f"'{load_objs_path}'")
+            if self.p is None:
+                selected_file = dlg.comboBox.currentText()
+                extension = pathlib.Path(selected_file).suffix
+                prev_cwd = os.getcwd()
+                print("extension ", extension)
 
-            origin_path = os.path.join(self.project.path, "scripts", selected_file)
-            tmp_path = os.path.join(".", selected_file)
+                file_path = os.path.join(self.project.path, "scripts", selected_file)
 
-            injected_lines = ["import sys\n", f"sys.path.insert(0, r'{load_objs_path}')\n"]
+                self.p = QProcess()
+                self.p.readyReadStandardOutput.connect(self.handle_script_stdout)
+                self.p.readyReadStandardError.connect(self.handle_script_stderr)
+                self.p.finished.connect(self.script_finished)
 
-            #shutil.copyfile(origin_path, tmp_path)
+                os.chdir(self.project.path)
 
-            with open(origin_path, "r") as f:
-                content = f.readlines()
-
-            new_content = injected_lines + content
-
-            with open(tmp_path, "w") as f:
-                f.writelines(new_content)
-
-            process = QProcess(self)
-            process.readyRead.connect(lambda : self.add_to_output(process.readAll().data().decode("utf-8")))
-
-            process.start("python", [tmp_path])
+                if extension == ".py":
+                    self.p.start("python", [file_path])
+                    #subprocess.Popen(["python", file_path])
+                elif extension == ".mjs":
+                    print("uwu")
+                    self.p.start("node", [file_path])
+                    #subprocess.Popen(["node", file_path])
+                
+                os.chdir(prev_cwd)
 
             #subprocess.Popen(["python", tmp_path])
             

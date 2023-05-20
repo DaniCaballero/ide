@@ -1,13 +1,11 @@
-from blockchain.contract import Contract
-from blockchain.network import Network, Local_Network
-from blockchain.account import Account, Local_Account
+from .test_classes import Contract, Network, Local_Network, Account, Local_Account
 import os, json
 
 def load_project_data():
-    with open("current_project_path.txt", "r") as f:
-        project_path = rf"{f.readline()}"
+    #with open("current_project_path.txt", "r") as f:
+    #    project_path = rf"{f.readline()}"
 
-    with open(os.path.join(project_path, "project_data.json"), "r") as f:
+    with open("./project_data.json", "r") as f:
         data_json = json.load(f)
 
     return data_json

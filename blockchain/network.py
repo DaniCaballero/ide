@@ -31,7 +31,7 @@ class Local_Network:
 class Network:
     def __init__(self, name, chain_id, api_key="", project_path=""):
         self.name = name
-        self.chain_id = 5
+        self.chain_id = chain_id
         self.nodes = []
         self.project_path = project_path
 

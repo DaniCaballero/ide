@@ -4,7 +4,7 @@ from project.project import Project, Editor
 from pathlib import Path
 from blockchain.compile import compile
 import threading, subprocess, shutil, os
-from dialogs.dialogs import Compile_Dialog, Add_Account_Dialog, Add_Node_Dialog, Deploy_Dialog, IPFS_Token_Dialog
+from dialogs.dialogs import Compile_Dialog, Add_Account_Dialog, Add_Node_Dialog, Deploy_Dialog, IPFS_Token_Dialog, interactThread
 from blockchain.account import Account, add_local_accounts
 from blockchain.network import Network, init_ganache
 from blockchain.ipfs import IPFS
@@ -79,11 +79,27 @@ def add_node_provider(state):
         network_name = dlg.get_network()
         network_key = dlg.get_key()
         net = Network(network_name, 2, network_key, state.project.path)
+
+        w3 = net.connect_to_node()
+        net.chain_id = w3.net.version
+        print("network chan id ", w3.net.version)
         state.networks[network_name] = net
         state.output.append(f'Node provider for "{network_name} network" added\n')
         state.functions_widget.update_networks()
 
         state.save_to_json()
+
+def handle_deploy_finished(state, contract, network, tx_receipt):
+
+    try:
+        result = tx_receipt["contractAddress"]
+        link = network.get_link("address", result)
+        state.add_to_output(result, True, False, link)
+        state.functions_widget.insert_function(state, contract)
+        state.save_to_json()
+    except:
+        result = tx_receipt
+        state.add_to_output(result)
 
 def deploy_contract(state):
     dlg = Deploy_Dialog(state)
@@ -114,15 +130,10 @@ def deploy_contract(state):
                 account = state.accounts["persistent"][account_name]
 
             w3 = network.connect_to_node()
-
-            _, tx_receipt = contract.deploy(network, w3, account, constructor_args)
-
-            link = network.get_link("address", tx_receipt.contractAddress)
-            state.output.add_to_output(tx_receipt.contractAddress, True, False, link)
-            # chequear si el thread finalizo bien primero
-            state.functions_widget.insert_function(state, contract)
-
-            state.save_to_json()
+            state._thread = interactThread(True, contract, [network, w3, account, constructor_args])
+            state._thread.finished.connect(lambda tx_receipt :handle_deploy_finished(state, contract, network, tx_receipt))
+            state._thread.start()
+            #_, tx_receipt = contract.deploy(network, w3, account, constructor_args)
             #threading.Thread(target=deploy_thread, args=(state, contract, network, w3, account, constructor_args,)).start()
         except Exception as e:
             state.add_to_output(e)

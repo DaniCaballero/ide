@@ -306,10 +306,13 @@ class Functions_Layout(QWidget):
         names = []
         network = self.select_network.currentText()
 
-        if network == "local":
-            names = self.app.accounts["local"].keys()
-        else:
-            names = self.app.accounts["persistent"].keys()
+        try:
+            if network == "local":
+                names = self.app.accounts["local"].keys()
+            else:
+                names = self.app.accounts["persistent"].keys()
+        except:
+            names = []
         
         self.select_account.clear()
         self.select_account.addItems(names)
@@ -353,10 +356,17 @@ class Functions_Layout(QWidget):
             account = self.app.accounts["persistent"][self.select_account.currentText()]
 
         #threading.Thread(target=contract_interaction, args=(network, w3, account,*args,)).start()
-        _, result = contract.contract_interaction(network, w3, account, *args, msg_value)
+        # try:
+        #     _, result = contract.contract_interaction(network, w3, account, *args, msg_value)
+        # except Exception as e:
+        #     result = e
 
-        print("type of result ", type(result).__name__)
+        self.th = interactThread(False, contract, [network, w3, account, *args, msg_value])
+        self.th.finished.connect(self.interact_finished_slot)
+        self.th.start()
+        #print("type of result ", type(result).__name__)
 
+    def interact_finished_slot(self, result):
         if type(result).__name__ == 'AttributeDict':
             result = Web3.toJSON(result)
             result = json.loads(result)
@@ -364,6 +374,26 @@ class Functions_Layout(QWidget):
             print(result)
 
         self.function_signal.emit(str(result))
+
+class interactThread(QThread):
+    finished = pyqtSignal(object)
+
+    def __init__(self, deploy, contract, params, parent = None):
+        super().__init__(parent)
+        self._deploy = deploy
+        self._contract = contract
+        self._paraams = params
+
+    def run(self):
+        try:
+            if self._deploy == True:
+                _ ,value = self._contract.deploy(*(self._paraams))
+            else:  
+                _ ,value = self._contract.contract_interaction(*(self._paraams))
+        except Exception as e:
+            value = e
+
+        self.finished.emit(value)
 
 class Project_Widget(QWidget):
     def __init__(self, parent):
