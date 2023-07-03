@@ -28,10 +28,52 @@
           </widget>
          </item>
          <item>
-          <widget class="QComboBox" name="comboBox"/>
+          <widget class="QComboBox" name="data_type_box">
+           <item>
+            <property name="text">
+             <string>All</string>
+            </property>
+           </item>
+           <item>
+            <property name="text">
+             <string>Blocks</string>
+            </property>
+           </item>
+           <item>
+            <property name="text">
+             <string>Tx</string>
+            </property>
+           </item>
+          </widget>
          </item>
          <item>
-          <widget class="QComboBox" name="comboBox_2"/>
+          <widget class="QComboBox" name="action_type_box">
+           <item>
+            <property name="text">
+             <string>All</string>
+            </property>
+           </item>
+           <item>
+            <property name="text">
+             <string>Block Creation</string>
+            </property>
+           </item>
+           <item>
+            <property name="text">
+             <string>Contract Creation</string>
+            </property>
+           </item>
+           <item>
+            <property name="text">
+             <string>New Transaction</string>
+            </property>
+           </item>
+           <item>
+            <property name="text">
+             <string>Block Propagation</string>
+            </property>
+           </item>
+          </widget>
          </item>
         </layout>
        </item>

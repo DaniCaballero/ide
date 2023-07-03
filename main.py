@@ -274,14 +274,12 @@ class MainWindow(QMainWindow):
             pass
 
     def visualizer(self):
-        #dlg = Visualizer(2, "C:\\Users\\Asus\\Documents\\Tesis\\Vote\\tests\\logss\\logs")
         tests_path = os.path.join(self.project.path, "tests")
-        try:
-            dir_files = os.listdir(tests_path)
-        except:
-            dir_files = []
 
-        test_names = [dir_name for dir_name in dir_files if os.path.isdir(os.path.join(tests_path, dir_name))]
+        try:
+            test_names = self.tests.keys()
+        except:
+            test_names = []
 
         dlg = Select_Test_Visualizer(test_names)
 

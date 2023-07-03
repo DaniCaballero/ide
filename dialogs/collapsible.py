@@ -17,7 +17,7 @@ class CollapsibleBox(QtWidgets.QWidget):
             QtCore.Qt.ToolButtonStyle.ToolButtonTextBesideIcon
         )
         #self.toggle_button.setArrowType(QtCore.Qt.ArrowType.RightArrow)
-        self.toggle_button.setIcon(QtGui.QIcon("./right-arrow-white.png"))
+        self.toggle_button.setIcon(QtGui.QIcon("./ui/Icons/right-arrow-white.png"))
         self.toggle_button.pressed.connect(self.on_pressed)
         self.toggle_button.setSizePolicy(QtWidgets.QSizePolicy.Policy.Expanding, QtWidgets.QSizePolicy.Policy.Fixed)
 
@@ -57,7 +57,7 @@ class CollapsibleBox(QtWidgets.QWidget):
         # )
 
         self.toggle_button.setIcon(
-            QtGui.QIcon("./down-arrow-white.png") if not checked else QtGui.QIcon("./right-arrow-white.png")
+            QtGui.QIcon("./ui/Icons/down-arrow-white.png") if not checked else QtGui.QIcon("./ui/Icons/right-arrow-white.png")
         )
 
         #self.toggle_button.setIcon()

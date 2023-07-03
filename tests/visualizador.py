@@ -8,6 +8,14 @@ import time, threading
 from os.path import isfile, join
 from os import listdir
 
+def apply_filter(entry, filters):
+
+    for filter in filters:
+        if filter in entry[3]:
+            return True
+        
+    return False
+
 class Visualizer_Container(QWidget):
     def __init__(self, nodes_names):
         super().__init__()
@@ -37,7 +45,12 @@ class Visualizer(QDialog):
     def init_UI(self):
         grid = QGridLayout()
         self.nodes_widgets = []
-        self._pos, self.entries, self.all_entries = 0, [], []
+        self._pos, self.entries, self.all_entries, self.tx_entries, self.block_entries = 0, [], [], [], []
+        self.tx_data, self.block_data, self.all_actions, self.block_creation_acc = [], [], [], []
+        self.submitted_contract_acc, self.new_tx_acc, self.block_propagation_acc = [],[],[]
+
+        self.data_type_box.currentTextChanged.connect(self.on_data_type_changed)
+        self.action_type_box.currentTextChanged.connect(self.on_action_type_changed)
 
         self.set_node_names()
 
@@ -61,14 +74,53 @@ class Visualizer(QDialog):
         self.skip_btn.clicked.connect(self.SkipEntries)
 
         self.verticalLayout_2.addLayout(grid)
-    
+
+    def on_data_type_changed(self):
+        self.DelAllEntries()
+
+        if self.data_type_box.currentText() == "All":
+            self.entries = self.all_entries
+
+        elif self.data_type_box.currentText() == "Blocks":
+            self.entries = self.block_entries
+
+        elif self.data_type_box.currentText() == "Tx":
+            self.entries = self.tx_entries
+
+        self.action_type_box.setCurrentIndex(0)
+
+    def on_action_type_changed(self):
+
+        self.DelAllEntries()
+
+        data_type = self.data_type_box.currentText()
+
+        if data_type == 'All': self.entries = self.all_entries
+        elif data_type == 'Blocks': self.entries = self.block_entries
+        elif data_type == 'Tx': self.entries = self.tx_entries
+
+        if self.action_type_box.currentText() == "All":
+            self.entries = [elem for elem in self.entries if apply_filter(elem, self.all_actions) == True]
+
+        elif self.action_type_box.currentText() == "Block Creation":
+            self.entries = [elem for elem in self.entries if apply_filter(elem, self.block_creation_acc) == True]
+
+        elif self.action_type_box.currentText() == "Contract Creation":
+            self.entries = [elem for elem in self.entries if apply_filter(elem, self.submitted_contract_acc) == True]
+
+        elif self.action_type_box.currentText() == "New Transaction":
+            self.entries = [elem for elem in self.entries if apply_filter(elem, self.new_tx_acc) == True]
+
+        elif self.action_type_box.currentText() == "Block Propagation":
+            self.entries = [elem for elem in self.entries if apply_filter(elem, self.block_propagation_acc) == True]
+
     def on_combobox_text_changed(self, node_index):
         #print("node index ", node_index)
         (c, j) = self.nodes_widgets[node_index]
         j.clear()
 
         for i in range(self._pos):
-            if c.currentText() == self.all_entries[i][2]:
+            if c.currentText() == self.entries[i][2]:
                 tmp = self.buildEntry(i)
                 j.append(f"{tmp}\n\n")
 
@@ -85,11 +137,10 @@ class Visualizer(QDialog):
             for i in range(16 - len(self.node_names)):
                 self.node_names.append('--')
 
-    
     def follow(self, _file, index):
         log_filter = ["Commit new sealing work", "Successfully seal new block", "mined potential block",
                       "Submitted contract creation", "Submitted transaction", "block reached canonical chain", "block lost",
-                      "Imported new chain segment", "Chain reorg detected"]
+                      "Imported new chain segment"]
         while True:
             filter_bool = False
             line = _file.readline().rstrip('\n')
@@ -105,15 +156,7 @@ class Visualizer(QDialog):
                 yield f"node{index} {line}"
 
     def generate(self, lg):
-        # for line in lg:
-        #     tmp = line.split(',')
-        #     if tmp[2] == 'blockMined' or tmp[3] == 'block' or tmp[3] == 'blockAck':
-        #         entradasBloque.append(tmp)
-        #     elif (tmp[3] == 'newTransaction' or tmp[3] == 'newTransactionAck' or
-        #         tmp[3] == 'Transaction' or tmp[3] == 'TransactionAck'):
-        #         entradasTx.append(tmp)
 
-        #     entradasTodos.append(tmp)
         separators = ["blocks","number", "hash", "address"]
         for line in lg:
             new_line = []
@@ -133,6 +176,15 @@ class Visualizer(QDialog):
             new_line[2] = new_line[0]
             new_line[0] = tmp_date
             new_line[3] = new_line[3].strip()
+
+            for filter in self.tx_data:
+                if filter in new_line[3]:
+                    self.tx_entries.append(new_line)
+
+            for filter in self.block_data:
+                if filter in new_line[3]:
+                    self.block_entries.append(new_line)
+
             #print("new line ", new_line)
             self.all_entries.append(new_line)
 
@@ -140,15 +192,9 @@ class Visualizer(QDialog):
         #global pos, posLast
 
         posLast = self._pos   
-        tmp = f"Acc:{index}:\n{self.all_entries[index][0]}"
+        tmp = f"Acc:{index}:\n{self.entries[index][0]}"
 
-        tmp += f"\n{self.all_entries[index][3]}"
-
-        # if self.entries[self._pos][2] == 'SENT' or self.entries[self._pos][2] == 'RECEIVED':
-        #     tmp += f"{self.entries[self._pos][2]}\nType: {self.entries[self._pos][3]}, {self.entries[self._pos][4]}"
-        #     tmp += f", {self.entries[self._pos][5]}" if len(self.entries[self._pos]) == 6 else ''
-        # elif self.entries[self._pos][2] == 'blockMined':
-        #     tmp += f"\nType: {self.entries[self._pos][2]}, {self.entries[self._pos][3]}"
+        tmp += f"\n{self.entries[index][3]}" 
         
         return tmp
     
@@ -171,11 +217,11 @@ class Visualizer(QDialog):
             pass
 
         try:
-            print(f"Procesando log: {self.all_entries[self._pos]}")
+            print(f"Procesando log: {self.entries[self._pos]}")
             self.change_background_color("255,255,255")
             self.last_textbox = []
             for (i, j) in self.nodes_widgets:
-                if i.currentText() == self.all_entries[self._pos][2] or len(self.nodes_widgets) == 1:
+                if i.currentText() == self.entries[self._pos][2] or len(self.nodes_widgets) == 1:
                     tmp = self.buildEntry(self._pos)
 
                     #j.config(state=NORMAL)
@@ -204,7 +250,7 @@ class Visualizer(QDialog):
 
         for i in range(index, -1, -1):
             for (c, j) in self.nodes_widgets:
-                if c.currentText() == self.all_entries[i][2]:
+                if c.currentText() == self.entries[i][2]:
                     iter_bool = True
             
             if iter_bool == False:
@@ -217,12 +263,12 @@ class Visualizer(QDialog):
     def AllEntries(self):
         self.change_background_color("255,255,255")
 
-        for x in range(self._pos, len(self.all_entries)):
+        for x in range(self._pos, len(self.entries)):
             self.last_textbox = []
             iter_bool = False
             try:
                 for (c,j) in self.nodes_widgets:
-                    if c.currentText() == self.all_entries[self._pos][2]:
+                    if c.currentText() == self.entries[self._pos][2]:
                         tmp = self.buildEntry(self._pos)
                         j.append(f"{tmp}\n\n")
                         self.last_textbox.append(j)
@@ -249,7 +295,7 @@ class Visualizer(QDialog):
             iter_bool = False
             try:
                 for (c,j) in self.nodes_widgets:
-                    if c.currentText() == self.all_entries[self._pos][2]:
+                    if c.currentText() == self.entries[self._pos][2]:
                         tmp = self.buildEntry(self._pos)
                         j.append(f"{tmp}\n\n")
                         self.last_textbox.append(j)
@@ -275,7 +321,7 @@ class Visualizer(QDialog):
             self.last_textbox = []
 
             for (i, j) in self.nodes_widgets:
-                if i.currentText() == self.all_entries[self._pos-1][2] or len(self.nodes_widgets) == 1:
+                if i.currentText() == self.entries[self._pos-1][2] or len(self.nodes_widgets) == 1:
                     self.last_textbox.append(j)
                     iter_bool = True
             
@@ -290,7 +336,7 @@ class Visualizer(QDialog):
             self.change_background_color("255,255,255")
 
             for (i, j) in self.nodes_widgets:
-                if i.currentText() == self.all_entries[self._pos-1][2] or len(self.nodes_widgets) == 1:
+                if i.currentText() == self.entries[self._pos-1][2] or len(self.nodes_widgets) == 1:
                     #j.config(state=NORMAL)
                     #j.delete(1.0, 5.0)
                     cursor = j.textCursor()
@@ -363,6 +409,21 @@ class Visualizer(QDialog):
         # entradasTx = sorted(entradasTx)
         # entradasBloque = sorted(entradasBloque)
         self.all_entries = sorted(self.all_entries)
+        self.entries = self.all_entries
+        self.tx_entries = sorted(self.tx_entries)
+        self.block_entries = sorted(self.block_entries)
+
+        # Data Types
+        self.tx_data = ["Submitted contract creation", "Submitted transaction"]
+        self.block_data = ["Commit new sealing work", "Successfully seal new block", "mined potential block", 
+                           "block reached canonical chain", "Imported new chain segment", "block lost"]
+
+        # Actions
+        self.all_actions = self.tx_data + self.block_data
+        self.block_creation_acc = ["Commit new sealing work", "Successfully seal new block", "mined potential block"]
+        self.submitted_contract_acc = ["Submitted contract creation"]
+        self.new_tx_acc = ["Submitted transaction"]
+        self.block_propagation_acc = ["block reached canonical chain", "Imported new chain segment", "block lost"]
 
         # fechaI = entradasTodos[0][0]
         # fechaF = entradasTodos[-1][0]

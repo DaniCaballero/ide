@@ -47,7 +47,7 @@ class Network:
     
     def get_link(self, hash_type, hash):
         if self.name == "mainnet":
-            url = f"https://goerli.etherscan.io/{hash_type}/{hash}"
+            url = f"https://etherscan.io/{hash_type}/{hash}"
         else:
             url = f"https://{self.name}.etherscan.io/{hash_type}/{hash}"
 

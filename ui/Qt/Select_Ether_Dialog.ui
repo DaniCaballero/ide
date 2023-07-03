@@ -111,6 +111,9 @@ background-color: white;
          <property name="enabled">
           <bool>false</bool>
          </property>
+         <property name="maximum">
+          <number>1000000000</number>
+         </property>
         </widget>
        </item>
       </layout>
@@ -128,6 +131,9 @@ background-color: white;
         <widget class="QSpinBox" name="spinBox_2">
          <property name="enabled">
           <bool>false</bool>
+         </property>
+         <property name="maximum">
+          <number>1000000000</number>
          </property>
         </widget>
        </item>
@@ -175,6 +181,9 @@ background-color: white;
          <property name="enabled">
           <bool>false</bool>
          </property>
+         <property name="maximum">
+          <number>1000000000</number>
+         </property>
         </widget>
        </item>
       </layout>
@@ -192,6 +201,9 @@ background-color: white;
         <widget class="QSpinBox" name="spinBox_5">
          <property name="enabled">
           <bool>false</bool>
+         </property>
+         <property name="maximum">
+          <number>1000000000</number>
          </property>
         </widget>
        </item>

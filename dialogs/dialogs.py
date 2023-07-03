@@ -1,6 +1,6 @@
 from PyQt6.QtWidgets import (QDialog, QDialogButtonBox, QVBoxLayout, QLabel, QComboBox, QLineEdit, QWidget,
                              QHBoxLayout, QFrame, QToolButton, QPushButton, QTreeView, QSizePolicy, QFileDialog, 
-                             QErrorMessage, QGraphicsDropShadowEffect, QCheckBox, QDoubleSpinBox, QMenu, QListView, QApplication)
+                             QErrorMessage, QGraphicsDropShadowEffect, QCheckBox, QDoubleSpinBox, QMenu, QListView, QApplication, QHeaderView)
 from PyQt6.QtGui import QPalette, QColor, QIcon, QFileSystemModel, QRgba64, QDragEnterEvent, QDragLeaveEvent
 from PyQt6.QtCore import QSize, Qt, QDir, pyqtSignal, QThread, QItemSelectionModel
 from PyQt6 import uic, QtWidgets
@@ -275,6 +275,7 @@ class Functions_Layout(QWidget):
         ether_layout = QHBoxLayout()
         #msg_value_label = QLabel("Send ether:")
         self.msg_value = QDoubleSpinBox()
+        self.msg_value.setMaximum(1000000000000000000)
         #self.msg_value.setPlaceholderText("ether amount")
         self.select_wei = QComboBox()
         self.select_wei.addItems(["wei", "gwei", "ether"])
@@ -706,7 +707,7 @@ class Argument_Dialog(QDialog):
             self.lineEdit_2.setText(self.arg.text)
 
     def get_path(self):
-        path, _ = QFileDialog.getOpenFileName(self, "Open File", "", "All files (*)")
+        path, _ = QFileDialog.getOpenFileName(self, "Open File", "", "CSV Files (*.csv);;TXT Files (*.txt)")
 
         self.lineEdit.setText(path)
 
@@ -1500,8 +1501,10 @@ class Results_Dialog(QDialog):
         self.tableView.setModel(self.model)
         self.tableView.setColumnHidden(0, True)
         self.tableView.resizeColumnsToContents()
+        #self.tableView.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeMode.Interactive)
+        self.tableView.horizontalHeader().setStyleSheet("QHeaderView::section {background-color: #3f5c73;color: white; font-weight:bold}")
         self.tableView.horizontalHeader().setStretchLastSection(True)
-        self.tableView.setAlternatingRowColors(True)
+        #self.tableView.setAlternatingRowColors(True)
 
         self.adjustSize()
 
