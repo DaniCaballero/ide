@@ -3,7 +3,7 @@ from PyQt6.QtWidgets import (QApplication, QWidget, QMainWindow, QHBoxLayout, QT
                             QMessageBox, QErrorMessage, QTextBrowser, QMenu)
 from menu_functions import *
 from dialogs.dialogs import (Compile_Dialog, Add_Account_Dialog, Add_Node_Dialog, Deploy_Dialog, IPFS_Token_Dialog, Functions_Layout, 
-                    Project_Widget, Left_Widget, Test_Dialog, Create_Project_Dialog, Manage_Test, Add_Files_IPFS, Select_Script)
+                    Project_Widget, Left_Widget, Test_Dialog, Create_Project_Dialog, Manage_Test, Add_Files_IPFS, Select_Script, New_Account)
 from tests.visualizador import Visualizer, Select_Test_Visualizer
 from blockchain.account import Account, add_local_accounts
 from blockchain.network import Network, init_ganache
@@ -99,7 +99,7 @@ class MainWindow(QMainWindow):
         create_menu_option("File", ["New File", "Open", "Save", "Save As", "Close"], [self.new_file, self.open_file, self.save, self.save_as, self.close_file], ["Ctrl+N", "", "Ctrl+S", "Ctrl+Shift+S", ""],menu, self)
         create_menu_option("Project", ["Initialize", "Open", "Delete"], [self.init_project, self.open_project, self.delete_project], ["", "", ""],menu, self)
         create_menu_option("Compile", ["Compile File", "Compile All"], [lambda_func(compile_file, self), lambda_func(compile_file, self)],["",""], menu, self)
-        create_menu_option("Accounts", ["Add account", "Generate account"], [lambda_func(add_account, self), lambda_func(generate_account, self)], ["",""],menu, self)
+        create_menu_option("Accounts", ["Add account", "Generate account"], [lambda_func(add_account, self), self.create_new_account], ["",""],menu, self)
         create_menu_option("Networks", ["Add node provider"], [lambda_func(add_node_provider, self)], [""], menu, self)
         create_menu_option("IPFS", ["Add Token ID", "Add file"], [lambda_func(add_token_id, self), self.add_to_ipfs], ["",""], menu, self)
         create_menu_option("Deploy", ["Deploy contract"], [lambda_func(deploy_contract, self)], [""], menu, self)
@@ -187,6 +187,12 @@ class MainWindow(QMainWindow):
                 self.statusBar().showMessage(f"Project successfully deleted!", 2000)
             else:
                 self.statusBar().showMessage(f"Unable to delete project", 2000)
+
+    def create_new_account(self):
+        dlg = New_Account(self)
+
+        if dlg.exec():
+            pass
 
     def is_binary(self, path):
         with open(path, 'rb') as f:

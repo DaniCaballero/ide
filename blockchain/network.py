@@ -55,10 +55,14 @@ class Network:
 
     # proveedor de nodo tambien?
     def load_api_key(self):
-        path = os.path.join(self.project_path, ".env")
-        load_dotenv(path)
+        try:
+            path = os.path.join(self.project_path, ".env")
+            load_dotenv(path)
 
-        return os.getenv(f"{self.name}_API_KEY")
+            return os.getenv(f"{self.name}_API_KEY")
+        except:
+            raise Exception(f"Couldn't find api key for {self.name} network")
+
 
     def write_api_key_to_env(self, api_key, project_path):
         env_line = f"export {self.name}_API_KEY={api_key}\n"

@@ -8,9 +8,11 @@ import os, threading, decimal, shutil, pickle, copy, json
 from pathlib import Path
 from .collapsible import CollapsibleBox
 from blockchain.contract import find_replace_split
+from blockchain.account import Account
 from project.project import Editor, Select_Accounts_Model
 from tests.test import Sequence, Random, File, Prev_Output, Test, Instruction, Worker, List_Arg, Argument, ResultsModel, Time_Arg
 from web3 import Web3
+import blocksmith
 
 
 def get_button_box(dialog_obj):
@@ -1514,5 +1516,61 @@ class Select_Output_Index(QDialog):
     def __init__(self):
         super().__init__()
         uic.loadUi("./ui/Qt/Select_Output_Index.ui", self)
+
+class New_Account(QDialog):
+    def __init__(self, main_window):
+        super().__init__()
+        uic.loadUi("./ui/Qt/NewAccount.ui", self)
+        self.main_window = main_window
+
+        self.copy_btn.setIcon(QIcon("./ui/Icons/copy.png"))
+
+        self.name_edit.textChanged.connect(self.enable_disable_accept)
+        self.copy_btn.clicked.connect(self.copy_address)
+
+    def copy_address(self):
+        address = self.address_edit.text()
+
+        QApplication.clipboard().setText(address)
+
+    def enable_disable_accept(self):
+        name = self.name_edit.text()
+        accounts = self.main_window.accounts
+
+        try:
+            keys = accounts["persistent"].keys()
+        except:
+            keys = []
+        
+        if name != "" and name not in keys:
+            self.buttonBox.button(QDialogButtonBox.StandardButton.Ok).setEnabled(True)
+        else:
+            self.buttonBox.button(QDialogButtonBox.StandardButton.Ok).setEnabled(False)
+
+    def accept(self):
+        name = self.name_edit.text()
+        path = self.main_window.project.path()
+
+        try:
+            kg = blocksmith.KeyGenerator()
+            priv_key = kg.generate_key()
+
+            new_account = Account(name, priv_key, path)
+
+            self.address_edit.clear()
+            self.address_edit.setText(new_account.address)
+
+            try:
+                self.main_window.accounts["persistent"][name] = new_account
+            except:
+                self.main_window.accounts["persistent"] = {}
+                self.main_window.accounts["persistent"][name] = new_account
+
+            self.buttonBox.button(QDialogButtonBox.StandardButton.Ok).setEnabled(False)
+        except:
+            error_message = QErrorMessage(self)
+            error_message.showMessage("Couldn't create new account")
+
+
 
 

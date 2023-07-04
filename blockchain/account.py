@@ -44,10 +44,13 @@ class Account:
             self.write_priv_key_to_env(priv_key, project_path)
 
     def load_private_key(self):
-        path = os.path.join(self.project_path, ".env")
-        load_dotenv(path)
+        try:
+            path = os.path.join(self.project_path, ".env")
+            load_dotenv(path)
 
-        return os.getenv(f"{self.alias}_PRIVATE_KEY")
+            return os.getenv(f"{self.alias}_PRIVATE_KEY")
+        except:
+            raise Exception(f"Couldn't find private key of address: {self.address}")
 
     def get_address_from_priv_key(self, priv_key):
         account = web3.eth.Account.from_key(priv_key)
