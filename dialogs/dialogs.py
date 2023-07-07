@@ -44,9 +44,10 @@ class Create_Project_Dialog(QDialog):
         self.project_path.setText(path)
 
     def enable_disable_buttons(self):
+        project_name = self.project_name.text().strip()
         path = self.project_path.text()
 
-        if Path(path).exists() and path != "" and self.project_name.text() != "":
+        if Path(path).exists() and path != "" and project_name != "" and " " not in project_name:
             self.buttonBox.button(QDialogButtonBox.StandardButton.Ok).setEnabled(True)
         else:
             self.buttonBox.button(QDialogButtonBox.StandardButton.Ok).setEnabled(False)
@@ -608,7 +609,9 @@ class Test_Dialog(QDialog):
                 instruction.msg_values.generate_data(instruction.number_of_executions)
                 for arg in instruction.args:
                     arg.generate_data(instruction.number_of_executions)
-        except:
+        except Exception as e:
+            print(e)
+            error_message = QErrorMessage(self)
             error_message.showMessage("Failed to initialize arguments")
             self.run_test_btn.setEnabled(False)
             return
@@ -663,7 +666,7 @@ class Select_Instruction(QDialog):
         self.buttonBox.button(QDialogButtonBox.StandardButton.Ok).setEnabled(True)
 
 class Argument_Dialog(QDialog):
-    def __init__(self, ui_file_name, test, arg = None):
+    def __init__(self, ui_file_name, test, inherit = False, arg = None):
         super().__init__()
         uic.loadUi(f"./ui/Qt/{ui_file_name}", self)
         self.current_toggled = None
@@ -691,7 +694,7 @@ class Argument_Dialog(QDialog):
 
         self.select_prev_output.addItems(list(test.prev_outputs.keys()))
 
-        if self.arg != None:
+        if inherit == False and self.arg != None:
             self.set_default_values()
 
     def set_default_values(self):
@@ -703,9 +706,11 @@ class Argument_Dialog(QDialog):
             self.lineEdit.setText(self.arg.path)
 
         elif class_name == "Prev_Output":
+            self.radioButton_4.setChecked(True)
             self.select_prev_output.setText(self.arg.output_dict_name)
 
         elif class_name == "List_Arg":
+            self.radioButton_5.setChecked(True)
             self.lineEdit_2.setText(self.arg.text)
 
     def get_path(self):
@@ -780,8 +785,8 @@ class Argument_Dialog(QDialog):
             print("upss")
 
 class Argument_Dialog_Int(Argument_Dialog):
-    def __init__(self, ui_file_name, test, arg = None):
-        super().__init__(ui_file_name, test, arg)
+    def __init__(self, ui_file_name, test, inherit, arg = None):
+        super().__init__(ui_file_name, test, inherit, arg)
 
         self.radioButton_2.toggled.connect(lambda : self.disable_enable_children(self.radioButton_2.text()))
         self.radioButton_2.toggled.connect(self.validate_row_2)
@@ -795,6 +800,9 @@ class Argument_Dialog_Int(Argument_Dialog):
 
         self.spinBox_4.valueChanged.connect(self.validate_row_3)
         self.spinBox_5.valueChanged.connect(self.validate_row_3)
+
+        if self.arg != None:
+            self.set_default_values()
 
     def disable_enable_children(self, text):
         if text != "Time:":
@@ -863,19 +871,30 @@ class Argument_Dialog_Int(Argument_Dialog):
             return super().get_checked_button_values()
 
 class Argument_Dialog_Accounts(Argument_Dialog):
-    def __init__(self, ui_file_name, test, arg = None):
-        super().__init__(ui_file_name, test, arg)
+    def __init__(self, ui_file_name, test, inherit, arg = None):
+        super().__init__(ui_file_name, test, inherit, arg)
         self.accounts = test.accounts
         self.rols = test.rols
         self.selected_accounts = []
-
-        if arg != None:
-            self.selected_accounts = arg.data
 
         self.radioButton_2.toggled.connect(lambda : self.disable_enable_children(self.radioButton_2.text()))
         self.radioButton_2.toggled.connect(self.validate_row_2)
 
         self.pushButton_2.clicked.connect(self.select_accounts)
+
+        if self.arg != None:
+            self.selected_accounts = arg.data
+            self.set_default_values()
+
+    def set_default_values(self):
+
+        class_name = type(self.arg).__name__
+
+        if class_name == "Argument":
+            self.radioButton_2.setChecked(True)
+
+        else:
+            return super().set_default_values()
 
     def validate_row_2(self):
         if self.selected_accounts != []:
@@ -902,8 +921,8 @@ class Argument_Dialog_Accounts(Argument_Dialog):
             return super().get_checked_button_values()
 
 class Select_Ether_Dialog(Argument_Dialog):
-    def __init__(self, ui_file_name, test, arg = None):
-        super().__init__(ui_file_name, test, arg)
+    def __init__(self, ui_file_name, test, inherit, arg = None):
+        super().__init__(ui_file_name, test, inherit, arg)
         
         self.label.setText("Select Ether to send")
 
@@ -937,6 +956,8 @@ class Instruction_Widget(QWidget):
         self.msg_values = Random(0,0, "ether", "wei")
         self.is_defined = False
         self.prev_output_key = None
+
+        self.select_arguments.setEnabled(False)
 
         self.select_contract.addItems(self.contracts.keys())
         self.select_contract.currentIndexChanged.connect(self.set_versions)
@@ -981,6 +1002,9 @@ class Instruction_Widget(QWidget):
         dlg = List_Arguments_Dialog(self.arguments, self.accounts, self.rols, self.test, self.instruction)
 
         if dlg.exec():
+
+            self.argument_list = []
+
             if dlg.use_csv.isChecked():
                 file_path = dlg.file_path.text()
 
@@ -994,8 +1018,9 @@ class Instruction_Widget(QWidget):
         
             self.instruction_accounts = [index for index in dlg.selected_accounts]
             self.msg_values = dlg.msg_values
-            self.is_defined = True
             self.prev_output_key = dlg.prev_output_key
+            self.is_defined = True
+            self.instruction = self.get_instruction()
         else:
             print("wains")
 
@@ -1036,6 +1061,8 @@ class Instruction_Widget(QWidget):
         except:
             self.arguments = []
 
+        self.select_arguments.setEnabled(True)
+
     def get_instruction(self):
         if self.is_defined == False:
             raise Exception
@@ -1062,8 +1089,8 @@ class Argument_Widget_v2(QWidget):
         self.pushButton.clicked.connect(self.select_args)
 
     def select_args(self):
-        class_name, ui_file_name = self.get_ui_file_name()
-        dlg = class_name(ui_file_name, self.test, self.arg)
+        class_name, ui_file_name, inherit = self.get_ui_file_name()
+        dlg = class_name(ui_file_name, self.test, inherit, self.arg)
 
         if dlg.exec():
             self.arg = dlg.get_checked_button_values()
@@ -1074,17 +1101,19 @@ class Argument_Widget_v2(QWidget):
             print("NOOOO")
 
     def get_ui_file_name(self):
-        class_name, ui_file_name = Argument_Dialog,"Argument_Dialog_Base.ui"
+        class_name, ui_file_name, inherit = Argument_Dialog,"Argument_Dialog_Base.ui", False
 
         if "[" not in self.arg_type:
             if "int" in self.arg_type:
                 ui_file_name = "Argument_Dialog_Alt.ui"
                 class_name = Argument_Dialog_Int
+                inherit = True
             elif "address" in self.arg_type:
                 ui_file_name = "Argument_Dialog_Accounts.ui"
                 class_name = Argument_Dialog_Accounts
+                inherit = True
 
-        return class_name, ui_file_name
+        return class_name, ui_file_name, inherit
 
 class List_Arguments_Dialog(QDialog):
     def __init__(self, args, accounts, rols, test, instruction=None):
@@ -1151,12 +1180,15 @@ class List_Arguments_Dialog(QDialog):
         self.browse_btn.setEnabled(checked_bool)
 
     def add_output_key(self):
-        new_key = self.save_output_edit.text()
+        new_key = self.save_output_edit.text().strip()
 
-        if new_key not in self.test.prev_outputs.keys():
+        if new_key not in self.test.prev_outputs.keys() and " " not in new_key:
             self.test.prev_outputs[new_key] = []
             self.prev_output_key = new_key
             print("yay")
+        else:
+            error_message = QErrorMessage(self)
+            error_message.showMessage("Key is not valid")
 
     def get_path(self):
         path, _ = QFileDialog.getOpenFileName(self, "Open File", "", "All files (*)")
@@ -1172,7 +1204,7 @@ class List_Arguments_Dialog(QDialog):
             pass
 
     def add_ether_values(self):
-        dlg = Select_Ether_Dialog("Argument_Dialog_Base.ui", self.test)
+        dlg = Select_Ether_Dialog("Argument_Dialog_Base.ui", self.test, False)
 
         if dlg.exec():
             self.msg_values = dlg.get_checked_button_values()
@@ -1387,13 +1419,21 @@ class Manage_Accounts(QDialog):
 
     def create_rol(self):
         # hay que verificar que no haya un rol con el mismo nombre primero
-        name = self.rol_name.text()
-        min_idx = self.rol_spin_1.value()
-        max_idx = self.rol_spin_2.value()
+        name = self.rol_name.text().strip()
+        existing_names = self.test.rols.keys()
 
-        idxs = list(range(min_idx, max_idx))
+        if name not in existing_names:
+            min_idx = self.rol_spin_1.value()
+            max_idx = self.rol_spin_2.value()
 
-        self.test.add_new_rol(name, idxs)
+            if min_idx < max_idx:
+                idxs = list(range(min_idx, max_idx))
+
+                if " " not in name:
+                    self.test.add_new_rol(name, idxs)
+                else:
+                    error_message = QErrorMessage(self)
+                    error_message.showMessage("Name cannot contain white spaces")
 
     def accept(self) -> None:
         dlg = None
