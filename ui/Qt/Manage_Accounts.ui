@@ -168,7 +168,7 @@
            </widget>
           </item>
           <item>
-           <widget class="QListView" name="listView_2"/>
+           <widget class="QListView" name="rols_view"/>
           </item>
          </layout>
         </widget>

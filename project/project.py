@@ -154,4 +154,18 @@ class Select_Accounts_Model(QAbstractListModel):
 
     def rowCount(self, index):
         return len(self.accounts)
+    
+class Rols_Model(QAbstractListModel):
+    def __init__(self, rols):
+        super().__init__()
+        self.rols = rols
+
+    def data(self, index, role):
+        if role == Qt.ItemDataRole.DisplayRole:
+            rol = self.rols[index.row()]
+
+            return rol
+
+    def rowCount(self, index):
+        return len(self.rols)
 

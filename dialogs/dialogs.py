@@ -9,7 +9,7 @@ from pathlib import Path
 from .collapsible import CollapsibleBox
 from blockchain.contract import find_replace_split
 from blockchain.account import Account
-from project.project import Editor, Select_Accounts_Model
+from project.project import Editor, Select_Accounts_Model, Rols_Model
 from tests.test import Sequence, Random, File, Prev_Output, Test, Instruction, Worker, List_Arg, Argument, ResultsModel, Time_Arg
 from web3 import Web3
 import blocksmith
@@ -1382,10 +1382,17 @@ class Manage_Accounts(QDialog):
         self.model = Select_Accounts_Model(self.test.accounts)
         self.listView.setModel(self.model)
 
+        self.rol_model = Rols_Model(list(self.test.rols.keys()))
+        self.rols_view.setModel(self.rol_model)
+
         # connect btns clicked signals to slots
         self.create_accounts_btn.clicked.connect(self.create_accounts)
         self.create_rol_btn.clicked.connect(self.create_rol)
         self.add_accounts_btn.clicked.connect(self.add_existing_accounts)
+
+    def add_role_to_view(self):
+        self.rol_model = Rols_Model(list(self.test.rols.keys()))
+        self.rols_view.setModel(self.rol_model)
 
     def update_model(self):
         self.model = Select_Accounts_Model(self.test.accounts)
@@ -1431,6 +1438,7 @@ class Manage_Accounts(QDialog):
 
                 if " " not in name:
                     self.test.add_new_rol(name, idxs)
+                    self.add_role_to_view()
                 else:
                     error_message = QErrorMessage(self)
                     error_message.showMessage("Name cannot contain white spaces")
