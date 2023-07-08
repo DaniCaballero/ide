@@ -21,7 +21,11 @@ class Local_Account:
     def __init__(self, address, private_key):
         self.alias = address
         self.address = web3.Web3.toChecksumAddress(address)
-        self.private_key = "".join(("0x", private_key))
+
+        if private_key.startswith("0x") == False:
+            private_key = "".join(("0x", private_key))
+        
+        self.private_key = private_key
 
     def sign_transaction(self, node, tx):
         signed_tx = node.eth.account.sign_transaction(tx, private_key=self.private_key)

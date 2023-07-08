@@ -20,7 +20,7 @@ def compare_with_installable_solc_versions(version, compare_functions):
 
     for ver in version_list:
         if compare_functions[0](ver, Version(version[0])) and compare_functions[1](ver, Version(version[1])):
-            return (True, ver)
+            return (False, ver)
 
     return False, version[0]
 

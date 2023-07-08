@@ -11,8 +11,7 @@ from blockchain.contract import find_replace_split
 from blockchain.account import Account
 from project.project import Editor, Select_Accounts_Model, Rols_Model
 from tests.test import Sequence, Random, File, Prev_Output, Test, Instruction, Worker, List_Arg, Argument, ResultsModel, Time_Arg
-from web3 import Web3
-import blocksmith
+import blocksmith, web3
 
 
 def get_button_box(dialog_obj):
@@ -186,6 +185,18 @@ class Add_Account_Dialog(QDialog):
             self.buttonBox.button(QDialogButtonBox.StandardButton.Ok).setEnabled(True)
         else:
             self.buttonBox.button(QDialogButtonBox.StandardButton.Ok).setEnabled(False)
+
+    def accept(self) -> None:
+
+        try:
+            priv_key = self.key_input.text()
+            address = web3.eth.Account.from_key(priv_key).address
+        except:
+            error_message = QErrorMessage(self)
+            error_message.showMessage("Not a valid private key")
+            return
+
+        return super().accept()
     
 class Add_Node_Dialog(QDialog):
     def __init__(self, parent=None):
@@ -210,6 +221,22 @@ class Add_Node_Dialog(QDialog):
             self.buttonBox.button(QDialogButtonBox.StandardButton.Ok).setEnabled(True)
         else:
             self.buttonBox.button(QDialogButtonBox.StandardButton.Ok).setEnabled(False)
+
+    def accept(self) -> None:
+
+        try:
+            network = self.select_network.currentText()
+            key = self.key_input.text()
+
+            w3 = web3.Web3(web3.Web3.HTTPProvider(f"https://{network}.infura.io/v3/{key}"))
+            version = w3.net.version
+            print(version)
+        except:
+            error_message = QErrorMessage(self)
+            error_message.showMessage("Not a valid Infura Api Key")
+            return
+        
+        return super().accept()
 
 class Left_Widget(QFrame):
     def __init__(self):
@@ -352,7 +379,7 @@ class Functions_Layout(QWidget):
         w3 = network.connect_to_node()
         msg_value = self.msg_value.value() 
         wei = self.select_wei.currentText()
-        msg_value = Web3.toWei(decimal.Decimal(msg_value), wei)
+        msg_value = web3.Web3.toWei(decimal.Decimal(msg_value), wei)
 
         if network_name == "local":
             account = self.app.accounts["local"][self.select_account.currentText()]
@@ -372,7 +399,7 @@ class Functions_Layout(QWidget):
 
     def interact_finished_slot(self, result):
         if type(result).__name__ == 'AttributeDict':
-            result = Web3.toJSON(result)
+            result = web3.Web3.toJSON(result)
             result = json.loads(result)
             result = json.dumps(result, indent=1)
             print(result)

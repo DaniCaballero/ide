@@ -7,7 +7,7 @@ from dialogs.dialogs import (Compile_Dialog, Add_Account_Dialog, Add_Node_Dialog
 from tests.visualizador import Visualizer, Select_Test_Visualizer
 from blockchain.account import Account, add_local_accounts
 from blockchain.network import Network, init_ganache
-from blockchain.ipfs import IPFS
+from blockchain.ipfs import IPFS, ipfsThread
 from project.project import Editor, Project, Code_Output
 from PyQt6.QtGui import QAction, QColor, QPalette, QIcon, QFont, QFontDatabase
 import os, subprocess, psutil, sys, pickle, time, json, pathlib
@@ -348,6 +348,14 @@ class MainWindow(QMainWindow):
                 os.chdir(prev_cwd)
 
             #subprocess.Popen(["python", tmp_path])
+    def handle_ipfs_finished(self, result):
+        if result == True:
+            self.add_to_output("Files successfully uploaded to IPFS")
+        else:
+            print(result)
+            error_msg = QErrorMessage(self)
+            error_msg.showMessage("Unable to upload files to IPFS")
+
             
     def add_to_ipfs(self):
         dlg = Add_Files_IPFS(self.project.path, self)
@@ -355,12 +363,9 @@ class MainWindow(QMainWindow):
         if dlg.exec():
             multiple_files, path, name = dlg.get_input()
 
-            try:
-                self.ipfs.upload_to_ipfs(path, name, multiple_files, self.project.path)
-            except:
-                error_msg = QErrorMessage(self)
-                error_msg.showMessage("Unabled to upload files to IPFS")
-                
+            self._ipfsThread = ipfsThread(self.ipfs, [path, name, multiple_files, self.project.path])
+            self._ipfsThread.finished.connect(self.handle_ipfs_finished)
+            self._ipfsThread.start()    
 
     def load_data(self):
         try:

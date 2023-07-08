@@ -1,6 +1,24 @@
 import w3storage
 from pathlib import Path
 import os
+from PyQt6.QtCore import QThread, pyqtSignal
+
+class ipfsThread(QThread):
+    finished = pyqtSignal(object)
+
+    def __init__(self, ipfs, params, parent = None):
+        super().__init__(parent)
+        self.ipfs = ipfs
+        self._paraams = params
+
+    def run(self):
+        try:
+            self.ipfs.upload_to_ipfs(*(self._paraams))
+            value = True
+        except Exception as e:
+            value = e
+
+        self.finished.emit(value)
 
 class IPFS:
     def __init__(self, token_id):
