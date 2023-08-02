@@ -19,21 +19,21 @@ def apply_filter(entry, filters):
 class Visualizer_Container(QWidget):
     def __init__(self, nodes_names):
         super().__init__()
-        uic.loadUi("./ui/Visualizador_Container.ui", self)
+        uic.loadUi("./ui/Qt/Visualizador_Container.ui", self)
 
         self.comboBox.addItems(nodes_names)
 
 class Select_Test_Visualizer(QDialog):
     def __init__(self, test_names):
         super().__init__()
-        uic.loadUi("./ui/Select_Test_Visualizer.ui", self)
+        uic.loadUi("./ui/Qt/Select_Test_Visualizer.ui", self)
 
         self.comboBox.addItems(test_names)
 
 class Visualizer(QDialog):
     def __init__(self, dir):
         super().__init__()
-        uic.loadUi("./ui/Visualizador.ui", self)
+        uic.loadUi("./ui/Qt/Visualizador.ui", self)
         #self.nodes_number = nodes_number
 
         self.nodes_number = len([file_name for file_name in listdir(dir) if isfile(join(dir, file_name))])

@@ -1,6 +1,6 @@
 from PyQt6.QtWidgets import (QDialog, QDialogButtonBox, QVBoxLayout, QLabel, QComboBox, QLineEdit, QWidget,
                              QHBoxLayout, QFrame, QToolButton, QPushButton, QTreeView, QSizePolicy, QFileDialog, 
-                             QErrorMessage, QGraphicsDropShadowEffect, QCheckBox, QDoubleSpinBox, QMenu, QListView, QApplication, QHeaderView)
+                             QErrorMessage, QGraphicsDropShadowEffect, QCheckBox, QDoubleSpinBox, QMenu, QListView, QApplication, QHeaderView, QScrollArea)
 from PyQt6.QtGui import QPalette, QColor, QIcon, QFileSystemModel, QRgba64, QDragEnterEvent, QDragLeaveEvent
 from PyQt6.QtCore import QSize, Qt, QDir, pyqtSignal, QThread, QItemSelectionModel
 from PyQt6 import uic, QtWidgets
@@ -262,7 +262,7 @@ class Left_Widget(QFrame):
         self.setLayout(self.layout)
         self.setFixedWidth(50)
 
-class Functions_Layout(QWidget):
+class Functions_Layout(QScrollArea):
     function_signal = pyqtSignal(str)
 
     def __init__(self, parent=None):
@@ -272,6 +272,10 @@ class Functions_Layout(QWidget):
         palette = self.palette()
         palette.setColor(QPalette.ColorRole.Window, QColor("#ebf0f4"))
         self.setPalette(palette)
+        content = QWidget()
+        content.setPalette(palette)
+        self.setWidget(content)
+        self.setWidgetResizable(True)
 
         layout_label = QLabel("CONTRACT FUNCTIONS")
         layout_label.setStyleSheet("background-color: #3f5c73; color: white; padding: 5px 0; font-weight: bold;")
@@ -314,7 +318,7 @@ class Functions_Layout(QWidget):
         ether_layout.setContentsMargins(10,0,10,0)
         #add_widgets_to_layout(msg_layout, [msg_value_label, self.msg_value])
 
-        self.layout = QVBoxLayout()
+        self.layout = QVBoxLayout(content)
         self.layout.setAlignment(Qt.AlignmentFlag.AlignTop)
         #add_widgets_to_layout(self.layout, [self.select_account, self.msg_value])
         self.layout.addWidget(layout_label)
@@ -324,7 +328,8 @@ class Functions_Layout(QWidget):
         self.layout.addLayout(ether_layout)
         self.layout.addSpacing(70)
         self.layout.setContentsMargins(0,0,0,0)
-        self.setLayout(self.layout)
+        #self.layout.addStretch()
+        #self.setLayout(self.layout)
 
     def copy_account(self):
         QApplication.clipboard().setText(self.select_account.currentText())
@@ -353,6 +358,7 @@ class Functions_Layout(QWidget):
         box_layout = QVBoxLayout()
 
         for func in contract.get_functions():
+            print("function", func)
             func_layout = QHBoxLayout()
             btn = QPushButton(func["name"])
             input_types = [input["type"] for input in func["inputs"]]
@@ -633,6 +639,7 @@ class Test_Dialog(QDialog):
 
         try:
             for instruction in self.test.instructions:
+                print("msg_values", instruction.msg_values)
                 instruction.msg_values.generate_data(instruction.number_of_executions)
                 for arg in instruction.args:
                     arg.generate_data(instruction.number_of_executions)
@@ -795,6 +802,7 @@ class Argument_Dialog(QDialog):
 
         if self.radioButton.isChecked():
             path = self.lineEdit.text() #trim probablemente. check if is path
+            print("UWU")
 
             return File(file_path=path)
         
@@ -1237,6 +1245,7 @@ class List_Arguments_Dialog(QDialog):
             self.msg_values = dlg.get_checked_button_values()
             self.msg_values.type = dlg.select_wei_denomination.currentText()
             self.msg_values.name = "ether"
+            print("ether values", self.msg_values)
         else:
             pass
 

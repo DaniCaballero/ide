@@ -64,7 +64,9 @@ class Test:
             #print("data ", tmp_data)
 
             if arg.name == "ether":
+                print("prev temp", tmp_data)
                 tmp_data = [Web3.toWei(decimal.Decimal(data), arg.type) for data in tmp_data]
+                print("tmp_Data", tmp_data)
 
             if arg.type == "address":
                 tmp_data = [self.accounts[i].address for i in tmp_data]
@@ -263,7 +265,9 @@ class Test:
                 accounts = [self.accounts[index] for index in instruction.accounts]
                 #args = [accounts] +self._get_args([instruction.msg_values], instruction.number_of_executions) +self._get_args(instruction.args, instruction.number_of_executions)
                 args = [accounts] +self._get_args([instruction.msg_values]) +self._get_args(instruction.args)
+
                 threads_args_index = self._divide_load(args, instruction.number_of_executions, self.concurrency_number)
+
 
                 threads = [CustomThread(target=self._thread_send_transactions, args=(instruction.time_interval,
                             instruction.contract, instruction.function_name, instruction.prev_output_key, th_args, args,)) for th_args in threads_args_index]
@@ -379,7 +383,7 @@ class File(Argument):
         df = pandas.read_csv(self.path, sep=";", skipinitialspace=True)
 
         self.data = list(df[self.name])
-        #print("DATOS", self.data)
+        print("DATOS", self.data)
         return self.data
     
 class List_Arg(Argument):
