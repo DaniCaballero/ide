@@ -152,7 +152,7 @@ class Contract:
             nonce = w3.eth.getTransactionCount(account.address)
 
         tx = contract.constructor(*casted_args).build_transaction(
-            {"gasPrice": w3.eth.gas_price,"from" : account.address, "chainId" : network.chain_id, "nonce" : nonce, "value" : msg_value})
+            {"gasPrice": w3.eth.gas_price,"from" : account.address, "chainId" : int(network.chain_id), "nonce" : nonce, "value" : msg_value})
         
         tx_receipt = _sign_and_send_tx(tx, account, w3)
         self.address[network.chain_id] = tx_receipt.contractAddress

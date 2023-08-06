@@ -332,7 +332,13 @@ class Functions_Layout(QScrollArea):
         #self.setLayout(self.layout)
 
     def copy_account(self):
-        QApplication.clipboard().setText(self.select_account.currentText())
+
+        try:
+            address = self.app.accounts["persistent"][self.select_account.currentText()].address
+        except:
+            address = self.select_account.currentText()
+
+        QApplication.clipboard().setText(address)
 
     def update_networks(self):
         self.select_network.clear()
@@ -346,6 +352,7 @@ class Functions_Layout(QScrollArea):
             if network == "local":
                 names = self.app.accounts["local"].keys()
             else:
+                #names = [acc.address for acc in self.app.accounts["persistent"].values()]
                 names = self.app.accounts["persistent"].keys()
         except:
             names = []
@@ -358,7 +365,7 @@ class Functions_Layout(QScrollArea):
         box_layout = QVBoxLayout()
 
         for func in contract.get_functions():
-            print("function", func)
+            #print("function", func)
             func_layout = QHBoxLayout()
             btn = QPushButton(func["name"])
             input_types = [input["type"] for input in func["inputs"]]
@@ -379,7 +386,7 @@ class Functions_Layout(QScrollArea):
         box.setContentLayout(box_layout)
         self.layout.addWidget(box)
     
-    def interact_with_contract(self, contract, *args):
+    def interact_with_contract(self, contract, function_name, arg_list):
         network_name = self.select_network.currentText()
         network = self.app.networks[network_name]
         w3 = network.connect_to_node()
@@ -398,19 +405,21 @@ class Functions_Layout(QScrollArea):
         # except Exception as e:
         #     result = e
 
-        self.th = interactThread(False, contract, [network, w3, account, *args, msg_value])
-        self.th.finished.connect(self.interact_finished_slot)
+        self.th = interactThread(False, contract, [network, w3, account, function_name, arg_list, msg_value])
+        self.th.finished.connect(lambda result: self.interact_finished_slot(result, account.address, contract.name, function_name))
         self.th.start()
         #print("type of result ", type(result).__name__)
 
-    def interact_finished_slot(self, result):
+    def interact_finished_slot(self, result, address, contract_name, function_name):
         if type(result).__name__ == 'AttributeDict':
             result = web3.Web3.toJSON(result)
             result = json.loads(result)
             result = json.dumps(result, indent=1)
             print(result)
 
-        self.function_signal.emit(str(result))
+        tx_msg = f"Transaction sent by <b><a style='color : green' href=''>{address}</a></b> invoking method <b><a style='color : blue' href=''>{function_name}</a></b> of contract <b><a style='color : red' href=''>{contract_name}</a></b>:<br/>"
+
+        self.function_signal.emit(tx_msg + str(result))
 
 class interactThread(QThread):
     finished = pyqtSignal(object)

@@ -82,7 +82,6 @@ def add_node_provider(state):
 
         w3 = net.connect_to_node()
         net.chain_id = w3.net.version
-        print("network chan id ", w3.net.version)
         state.networks[network_name] = net
         state.output.append(f'Node provider for "{network_name} network" added\n')
         state.functions_widget.update_networks()

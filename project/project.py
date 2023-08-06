@@ -57,11 +57,11 @@ class Code_Output(QTextBrowser):
 
     def add_to_output(self, text, deploy_bool, json_bool, link):
         if deploy_bool:
-            self.append(f"Contract deployed at: <a style='color : blue' href='{link}'>{text}</a>\n")
+            self.append(f"Contract deployed at: <a style='color : blue' href='{link}'>{text}</a><br/>")
         elif json_bool:
-            self.append(f"{text}\n") #temporary
+            self.append(f"{text}<br/>") #temporary
         else:
-            self.append(f"{text}\n")
+            self.append(f"{text}<br/>")
 
 class Editor(QsciScintilla):
     def __init__(self, file_path="", font_families=None):
