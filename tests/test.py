@@ -1,5 +1,6 @@
 import random, pandas, time, threading, blocksmith, json, os, signal, decimal, psutil
 from PyQt6.QtCore import QThread, QObject, pyqtSignal, QAbstractTableModel, Qt
+from PyQt6.QtGui import QColor
 from blockchain.account import Account, Test_Account
 from .geth_nodes import init_geth_nodes, connect_nodes
 from blockchain.network import Local_Network
@@ -83,7 +84,7 @@ class Test:
 
         return data
 
-    def add_entry_to_results(self, node_port, contract_name, account_address, function_name, args, return_bool, return_value):
+    def add_entry_to_results(self, node_port, contract_name, account_address, function_name, args, return_bool, ether_sent, return_value):
 
         if type(return_value) == datastructures.AttributeDict:
             return_value = return_value["transactionHash"].hex() 
@@ -91,11 +92,11 @@ class Test:
         else:
             return_value = str(return_value)
             
-        row = [str(node_port),contract_name, account_address, function_name, f"{args}", return_value]
+        row = [str(node_port),contract_name, account_address, function_name, f"{args}", ether_sent, return_value]
         self.results.append(row)
 
     def generate_results_csv(self):
-        column_names = ["Node port","Contract Name", "Account", "Function Name", "Function arguments", "Return value/Tx hash"]
+        column_names = ["Node port","Contract Name", "Account", "Function Name", "Function arguments", "Amount of ether sent", "Return value/Tx hash"]
         df = pandas.DataFrame(self.results, columns=column_names)
         df.to_csv(os.path.join(self.project_path, "tests", self.name, "results.csv"))
 
@@ -216,7 +217,7 @@ class Test:
 
             lock.acquire()
             self.add_to_prev_output(return_value, prev_output_key)
-            self.add_entry_to_results(node.port, str(contract), account.address, function_name, args_row, return_bool, return_value)
+            self.add_entry_to_results(node.port, str(contract), account.address, function_name, args_row, return_bool, msg_value, return_value)
             self.inst_count += 1
             #print("nonce, inst_count, real nonce", nonce, self.inst_count, w3.eth.getTransactionCount(account.address))
             lock.release()
@@ -259,6 +260,7 @@ class Test:
             lock = threading.Lock()
 
             pids = self.configure_evironment()
+            start_time = time.time()
 
             for instruction in self.instructions:
                 # populate data list of arg
@@ -279,13 +281,17 @@ class Test:
                 # Wait for all threads to finish to move onto the next transaction
                 for th in threads:
                     th.join()
+            
+            end_time = time.time()
+            exec_time = round(end_time - start_time, 3)
+            self.add_entry_to_results(f"Execution time: {exec_time} seconds", "", "", "", "", "", "", "")
 
             self.generate_results_csv()
             self.end_geth_processes(pids)
 
         except Exception as e:
             self.error = True
-            self.add_entry_to_results("", "", "", "", "", "", e)
+            self.add_entry_to_results("", "", "", "", "", "","", e)
             self.generate_results_csv()
 
             try:
@@ -423,17 +429,40 @@ class ResultsModel(QAbstractTableModel):
     def __init__(self, data):
         super().__init__()
         self._data = data
-        self.hheaders = ["Node port","Contract Name", "Account", "Function Name", "Function arguments", "Return value/Tx hash"]
+        self.hheaders = ["Node port","Contract Name", "Account", "Function Name", "Function arguments", "Amount of ether sent", "Return value/Tx hash"]
+
+        colors = [QColor("#d9f6ff"), QColor("#d9ffed"), QColor("#ffd9f9"), QColor("#ffecd9"), QColor("#dcd9ff")]
+        self.nameColumn = 3
+
+        third_column = [row[self.nameColumn] for row in self._data]
+        unique_function_names = list(dict.fromkeys(third_column))
+        self.colors_dict = {}
+        index = 0
+
+        for function_name in unique_function_names:
+            color = colors[index % len(colors)]
+            self.colors_dict[function_name] = color
+            index += 1
+        
+        print("colors dict: ", self.colors_dict)
 
     def data(self, index, role):
         if role == Qt.ItemDataRole.DisplayRole:
             return self._data[index.row()][index.column()]
+        if role == Qt.ItemDataRole.BackgroundRole:
+            row = index.row()
+            try:
+                color = self.colors_dict[self._data[row][self.nameColumn]]
+                return color
+            except Exception as e:
+                print(e)
+                return QColor("white")
         
     def rowCount(self, index):
         return len(self._data)
     
     def columnCount(self, index):
-        return len(self._data[0])
+        return len(self._data[0])   
     
     def headerData(self, section, orientation, role=Qt.ItemDataRole.DisplayRole):
         if orientation == Qt.Orientation.Horizontal and role == Qt.ItemDataRole.DisplayRole:

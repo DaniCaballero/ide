@@ -46,8 +46,7 @@ font-weight: bold;</string>
    <item>
     <widget class="QTableView" name="tableView">
      <property name="styleSheet">
-      <string notr="true">alternate-background-color: white;
-background-color: #f5f5f5;</string>
+      <string notr="true">background-color: #f5f5f5;</string>
      </property>
      <property name="frameShape">
       <enum>QFrame::NoFrame</enum>

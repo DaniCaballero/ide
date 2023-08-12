@@ -52,14 +52,16 @@ class Project:
 class Code_Output(QTextBrowser):
     def __init__(self, parent):
         super().__init__(parent=parent)
+        font = QFont("Consolas", 10)
+        self.setFont(font)
 
         self.setOpenExternalLinks(True)
 
-    def add_to_output(self, text, deploy_bool, json_bool, link):
+    def add_to_output(self, text, deploy_bool, json_bool, link, script):
         if deploy_bool:
             self.append(f"Contract deployed at: <a style='color : blue' href='{link}'>{text}</a><br/>")
-        elif json_bool:
-            self.append(f"{text}<br/>") #temporary
+        elif json_bool or script:
+            self.append(f"{text}\n") #temporary
         else:
             self.append(f"{text}<br/>")
 

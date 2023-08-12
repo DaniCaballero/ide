@@ -89,8 +89,8 @@ class MainWindow(QMainWindow):
 
         self.setCentralWidget(container)
     
-    def add_to_output(self, text, deploy_bool = False, json_bool = False, link=""):
-        self.output.add_to_output(text, deploy_bool, json_bool, link)
+    def add_to_output(self, text, deploy_bool = False, json_bool = False, link="", script=False):
+        self.output.add_to_output(text, deploy_bool, json_bool, link, script)
         #self.output.append(f"{text}\n")
 
     def create_menu_bar(self):
@@ -302,12 +302,12 @@ class MainWindow(QMainWindow):
     def handle_script_stdout(self):
         data = self.p.readAllStandardOutput()
         stdout = bytes(data).decode("utf8")
-        self.add_to_output(stdout)
+        self.add_to_output(stdout, False, False, "", True)
 
     def handle_script_stderr(self):
         data = self.p.readAllStandardError()
         stderr = bytes(data).decode("utf8")
-        self.add_to_output(stderr)
+        self.add_to_output(stderr, False, False, "", True)
 
     def script_finished(self):
         self.p = None

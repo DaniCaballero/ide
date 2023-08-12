@@ -263,7 +263,7 @@ class Left_Widget(QFrame):
         self.setFixedWidth(50)
 
 class Functions_Layout(QScrollArea):
-    function_signal = pyqtSignal(str)
+    function_signal = pyqtSignal(str, bool, bool)
 
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -415,11 +415,11 @@ class Functions_Layout(QScrollArea):
             result = web3.Web3.toJSON(result)
             result = json.loads(result)
             result = json.dumps(result, indent=1)
-            print(result)
+            #print(result)
 
-        tx_msg = f"Transaction sent by <b><a style='color : green' href=''>{address}</a></b> invoking method <b><a style='color : blue' href=''>{function_name}</a></b> of contract <b><a style='color : red' href=''>{contract_name}</a></b>:<br/>"
-
-        self.function_signal.emit(tx_msg + str(result))
+        tx_msg = f"Transaction sent by <b><a style='color : green' href=''>{address}</a></b> invoking method <b><a style='color : blue' href=''>{function_name}</a></b> of contract <b><a style='color : red' href=''>{contract_name}</a></b>:"
+        self.function_signal.emit(tx_msg, False, False)
+        self.function_signal.emit(str(result), False, True)
 
 class interactThread(QThread):
     finished = pyqtSignal(object)
@@ -750,7 +750,7 @@ class Argument_Dialog(QDialog):
 
         elif class_name == "Prev_Output":
             self.radioButton_4.setChecked(True)
-            self.select_prev_output.setText(self.arg.output_dict_name)
+            self.select_prev_output.setCurrentText(self.arg.output_dict_name)
 
         elif class_name == "List_Arg":
             self.radioButton_5.setChecked(True)
@@ -1590,11 +1590,11 @@ class Results_Dialog(QDialog):
 
         self.model = ResultsModel(results)
 
-        for i,name in enumerate(["Node port","Contract Name", "Account", "Function Name", "Function arguments", "Return value/Tx hash"]):
+        for i,name in enumerate(["Node port","Contract Name", "Account", "Function Name", "Function arguments", "Amount of ether sent", "Return value/Tx hash"]):
             self.model.setHeaderData(i, Qt.Orientation.Horizontal, name)
 
         self.tableView.setModel(self.model)
-        self.tableView.setColumnHidden(0, True)
+        #self.tableView.setColumnHidden(0, True)
         self.tableView.resizeColumnsToContents()
         #self.tableView.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeMode.Interactive)
         self.tableView.horizontalHeader().setStyleSheet("QHeaderView::section {background-color: #3f5c73;color: white; font-weight:bold}")

@@ -168,7 +168,7 @@ class Contract:
     
         contract_instance = self.get_instance(w3, network)
 
-        tx = {"chainId" : network.chain_id, "from" : account.address, "nonce" : nonce, "gasPrice" : w3.eth.gas_price, "value" : msg_value}
+        tx = {"chainId" : int(network.chain_id), "from" : account.address, "nonce" : nonce, "gasPrice" : w3.eth.gas_price, "value" : msg_value}
 
         try:
             if visibility == "view" or visibility == "pure":
