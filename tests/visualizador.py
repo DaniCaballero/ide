@@ -194,8 +194,11 @@ class Visualizer(QDialog):
         posLast = self._pos   
         tmp = f"Acc:{index}:\n{self.entries[index][0]}"
 
-        tmp += f"\n{self.entries[index][3]}" 
-        
+        if self.entries[index][3] == "Submitted contract creation" or self.entries[index][3] == "Submitted transaction":
+            tmp += f"\n{' '.join(self.entries[index][3:])}"
+        else:
+            tmp += f"\n{self.entries[index][3]}" 
+        #print("entry 4 ", self.entries[index][4])
         return tmp
     
     def change_background_color(self, color):
@@ -340,8 +343,11 @@ class Visualizer(QDialog):
                     #j.config(state=NORMAL)
                     #j.delete(1.0, 5.0)
                     cursor = j.textCursor()
+
                     cursor.movePosition(QTextCursor.MoveOperation.End)
+                    #cursor.select(QTextCursor.SelectionType.)
                     cursor.movePosition(QTextCursor.MoveOperation.PreviousBlock, QTextCursor.MoveMode.KeepAnchor, 5)
+                    print("selected text: ", cursor.selectedText())
                     cursor.removeSelectedText()
                     j.setTextCursor(cursor)
                     #j.config(state=DISABLED)
