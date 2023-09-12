@@ -1,6 +1,5 @@
-import w3storage
+import w3storage, os, time
 from pathlib import Path
-import os
 from PyQt6.QtCore import QThread, pyqtSignal
 
 class ipfsThread(QThread):
@@ -36,11 +35,14 @@ class IPFS:
     def add_files(self, dir_path):
         files = os.listdir(dir_path)
         only_files = [os.path.join(dir_path, f) for f in files if os.path.isfile(os.path.join(dir_path, f))]
+        print(only_files)
         cids = []
 
         for file in only_files:
             cid = self.add_file(file)
             cids.append(cid)
+            time.sleep(0.5)
+            print("bip")
 
         return cids
 

@@ -1612,7 +1612,7 @@ class Select_Output_Index(QDialog):
 
 class New_Account(QDialog):
     def __init__(self, main_window):
-        super().__init__()
+        super().__init__(main_window)
         uic.loadUi("./ui/Qt/NewAccount.ui", self)
         self.main_window = main_window
 
@@ -1642,7 +1642,7 @@ class New_Account(QDialog):
 
     def accept(self):
         name = self.name_edit.text()
-        path = self.main_window.project.path()
+        path = self.main_window.project.path
 
         try:
             kg = blocksmith.KeyGenerator()
