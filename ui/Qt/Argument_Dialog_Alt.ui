@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>511</width>
-    <height>495</height>
+    <width>546</width>
+    <height>400</height>
    </rect>
   </property>
   <property name="sizePolicy">
@@ -281,65 +281,6 @@ background-color: white;
         </widget>
        </item>
       </layout>
-     </item>
-     <item row="5" column="0">
-      <widget class="QRadioButton" name="radioButton_6">
-       <property name="text">
-        <string>Time:</string>
-       </property>
-      </widget>
-     </item>
-     <item row="5" column="1">
-      <layout class="QHBoxLayout" name="horizontalLayout_9">
-       <item>
-        <widget class="QLabel" name="label_2">
-         <property name="text">
-          <string>Current Time</string>
-         </property>
-        </widget>
-       </item>
-       <item>
-        <widget class="QLabel" name="label_3">
-         <property name="text">
-          <string>+</string>
-         </property>
-        </widget>
-       </item>
-      </layout>
-     </item>
-     <item row="5" column="2" colspan="2">
-      <layout class="QHBoxLayout" name="horizontalLayout_10">
-       <property name="spacing">
-        <number>7</number>
-       </property>
-       <item>
-        <widget class="QSpinBox" name="seconds_spin">
-         <property name="enabled">
-          <bool>false</bool>
-         </property>
-         <property name="maximum">
-          <number>1000000000</number>
-         </property>
-        </widget>
-       </item>
-       <item>
-        <widget class="QLabel" name="label_4">
-         <property name="text">
-          <string>seconds</string>
-         </property>
-        </widget>
-       </item>
-      </layout>
-     </item>
-     <item row="6" column="1">
-      <widget class="QCheckBox" name="random_checkbox">
-       <property name="enabled">
-        <bool>false</bool>
-       </property>
-       <property name="text">
-        <string>Random </string>
-       </property>
-      </widget>
      </item>
     </layout>
    </item>

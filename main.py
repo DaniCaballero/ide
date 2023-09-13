@@ -97,7 +97,7 @@ class MainWindow(QMainWindow):
         menu = self.menuBar()
 
         create_menu_option("File", ["New File", "Open", "Save", "Save As", "Close"], [self.new_file, self.open_file, self.save, self.save_as, self.close_file], ["Ctrl+N", "", "Ctrl+S", "Ctrl+Shift+S", ""],menu, self)
-        create_menu_option("Project", ["Initialize", "Open", "Delete"], [self.init_project, self.open_project, self.delete_project], ["", "", ""],menu, self)
+        create_menu_option("Project", ["Initialize", "Open"], [self.init_project, self.open_project], ["", ""],menu, self)
         create_menu_option("Compile", ["Compile File", "Compile All"], [lambda_func(compile_file, self), lambda_func(compile_file, self)],["",""], menu, self)
         create_menu_option("Accounts", ["Add account", "Generate account"], [lambda_func(add_account, self), self.create_new_account], ["",""],menu, self)
         create_menu_option("Networks", ["Add node provider"], [lambda_func(add_node_provider, self)], [""], menu, self)
@@ -175,18 +175,6 @@ class MainWindow(QMainWindow):
                     self.project_widget.add_tree_view(path)
                 except:
                     self.statusBar().showMessage(f"Unable to open project at {path}", 2500)
-
-    def delete_project(self):
-        path = QFileDialog.getExistingDirectory(self, "Select Directory")
-
-        if path != "":
-            project = Project(path)
-            delete_bool = project.delete_project()
-
-            if delete_bool:
-                self.statusBar().showMessage(f"Project successfully deleted!", 2000)
-            else:
-                self.statusBar().showMessage(f"Unable to delete project", 2000)
 
     def create_new_account(self):
         dlg = New_Account(self)

@@ -338,6 +338,9 @@ background-color: #f2f5ff;
    </item>
    <item>
     <widget class="QScrollArea" name="scrollArea">
+     <property name="acceptDrops">
+      <bool>false</bool>
+     </property>
      <property name="autoFillBackground">
       <bool>false</bool>
      </property>
@@ -379,6 +382,9 @@ font: 12pt &quot;Segoe UI&quot;;
        </item>
        <item>
         <widget class="QWidget" name="scroll_widget" native="true">
+         <property name="acceptDrops">
+          <bool>true</bool>
+         </property>
          <property name="autoFillBackground">
           <bool>false</bool>
          </property>

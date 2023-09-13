@@ -836,8 +836,8 @@ class Argument_Dialog_Int(Argument_Dialog):
         self.radioButton_2.toggled.connect(self.validate_row_2)
         self.radioButton_3.toggled.connect(lambda : self.disable_enable_children(self.radioButton_3.text()))
         self.radioButton_3.toggled.connect(self.validate_row_3)
-        self.radioButton_6.toggled.connect(lambda : self.disable_enable_children(self.radioButton_6.text()))
-        self.radioButton_6.toggled.connect(self.activate_checkbox)
+        #self.radioButton_6.toggled.connect(lambda : self.disable_enable_children(self.radioButton_6.text()))
+        #self.radioButton_6.toggled.connect(self.activate_checkbox)
 
         self.spinBox.valueChanged.connect(self.validate_row_2)
         self.spinBox_2.valueChanged.connect(self.validate_row_2)
@@ -849,15 +849,13 @@ class Argument_Dialog_Int(Argument_Dialog):
             self.set_default_values()
 
     def disable_enable_children(self, text):
-        if text != "Time:":
-            self.random_checkbox.setEnabled(False)
 
         return super().disable_enable_children(text)
 
-    def activate_checkbox(self):
-        if self.radioButton_6.isChecked():
-            self.random_checkbox.setEnabled(True)
-            self.buttonBox.button(QDialogButtonBox.StandardButton.Ok).setEnabled(True)
+    # def activate_checkbox(self):
+    #     if self.radioButton_6.isChecked():
+    #         self.random_checkbox.setEnabled(True)
+    #         self.buttonBox.button(QDialogButtonBox.StandardButton.Ok).setEnabled(True)
 
     def set_default_values(self):
         class_name = type(self.arg).__name__
@@ -904,12 +902,6 @@ class Argument_Dialog_Int(Argument_Dialog):
             end = self.spinBox_5.value()
 
             return Random(start, end)
-        
-        elif self.radioButton_6.isChecked():
-            seconds = self.seconds_spin.value()
-            random_bool = self.random_checkbox.isChecked()
-
-            return Time_Arg(seconds, random_bool)
         
         else:
             return super().get_checked_button_values()
@@ -1065,8 +1057,7 @@ class Instruction_Widget(QWidget):
             self.prev_output_key = dlg.prev_output_key
             self.is_defined = True
             self.instruction = self.get_instruction()
-        else:
-            print("wains")
+
 
     def set_versions(self, index):
         self.select_version.clear()
@@ -1371,6 +1362,15 @@ class Manage_Test(QDialog):
                 self.buttonBox.button(QDialogButtonBox.StandardButton.Ok).setEnabled(True)
             else:
                 self.buttonBox.button(QDialogButtonBox.StandardButton.Ok).setEnabled(False)
+    
+    def copy_network_address(self, previous_test, new_test):
+        
+        for instruction in previous_test.instructions:
+            try:
+                contract = self.main_window.contracts[instruction.contract.name][instruction.version]
+                contract.address[f"geth-{new_test.name}"] = instruction.contract.address[f"geth-{previous_test.name}"]
+            except Exception as e:
+                print(e)
 
     # next button ?
     def accept(self) -> None:
@@ -1398,6 +1398,8 @@ class Manage_Test(QDialog):
 
                 #os.mkdir(dst_path)
                 shutil.copytree(src_path, dst_path)
+
+                self.copy_network_address(test, copied_test)
                 
                 #Añadir aqui el nuevo test a la lista de tests?
                 dlg = Manage_Accounts(True, Edit_Test_Dialog, self.main_window, copied_test)

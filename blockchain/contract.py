@@ -155,7 +155,7 @@ class Contract:
             {"gasPrice": w3.eth.gas_price,"from" : account.address, "chainId" : int(network.chain_id), "nonce" : nonce, "value" : msg_value})
         
         tx_receipt = _sign_and_send_tx(tx, account, w3)
-        self.address[network.chain_id] = tx_receipt.contractAddress
+        self.address[network.name] = tx_receipt.contractAddress
 
         return True, tx_receipt
 
@@ -185,7 +185,7 @@ class Contract:
             return False, e
 
     def get_instance(self, w3, network):
-        address = self.address[network.chain_id]
+        address = self.address[network.name]
         #print(address)
         contract_instance = w3.eth.contract(address=address, abi=self.abi)
 
