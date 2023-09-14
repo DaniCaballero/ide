@@ -388,23 +388,20 @@ class Visualizer(QDialog):
                 nodeNames.append('--')
 
         
-        # obtiene entradas del log
+        # Data Types
+        self.tx_data = ["Submitted contract creation", "Submitted transaction"]
+        self.block_data = ["Commit new sealing work", "Successfully seal new block", "mined potential block", 
+                           "block reached canonical chain", "Imported new chain segment", "block lost"]
 
-        # entradas = []
-        # entradasTodos = []
-        # entradasTx = []
-        # entradasBloque = []
-
-        # tipoDato = 'Todos'
-        # tipoAcc = 'Todos'
-
-        # datoTx = ['Transaction', 'TransactionAck', 'newTransaction', 'newTransactionAck']
-        # datoBloque = ['blockMined']
-        # accPres = ['announce', 'announceAck']
-        # accNTx = ['newTransaction', 'newTransactionAck']
-        # accPTx = ['Transaction', 'TransactionAck']
+        # Actions
+        self.all_actions = self.tx_data + self.block_data
+        self.block_creation_acc = ["Commit new sealing work", "Successfully seal new block", "mined potential block"]
+        self.submitted_contract_acc = ["Submitted contract creation"]
+        self.new_tx_acc = ["Submitted transaction"]
+        self.block_propagation_acc = ["block reached canonical chain", "Imported new chain segment", "block lost"]
 
         generator_threads = [threading.Thread(target=self.generate, args=(lg, ), daemon=True) for lg in log_generators]
+        
         for gt in generator_threads:
             gt.start()
 
@@ -419,17 +416,7 @@ class Visualizer(QDialog):
         self.tx_entries = sorted(self.tx_entries)
         self.block_entries = sorted(self.block_entries)
 
-        # Data Types
-        self.tx_data = ["Submitted contract creation", "Submitted transaction"]
-        self.block_data = ["Commit new sealing work", "Successfully seal new block", "mined potential block", 
-                           "block reached canonical chain", "Imported new chain segment", "block lost"]
 
-        # Actions
-        self.all_actions = self.tx_data + self.block_data
-        self.block_creation_acc = ["Commit new sealing work", "Successfully seal new block", "mined potential block"]
-        self.submitted_contract_acc = ["Submitted contract creation"]
-        self.new_tx_acc = ["Submitted transaction"]
-        self.block_propagation_acc = ["block reached canonical chain", "Imported new chain segment", "block lost"]
 
         # fechaI = entradasTodos[0][0]
         # fechaF = entradasTodos[-1][0]

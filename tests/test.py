@@ -253,7 +253,7 @@ class Test:
 
         return pids
 
-    def run(self):
+    def run(self, event):
 
         try:
             global lock
@@ -263,6 +263,8 @@ class Test:
             start_time = time.time()
 
             for instruction in self.instructions:
+                if event.is_set():
+                    raise Exception("Execution cancelled by main thread")
                 # populate data list of arg
                 accounts = [self.accounts[index] for index in instruction.accounts]
                 #args = [accounts] +self._get_args([instruction.msg_values], instruction.number_of_executions) +self._get_args(instruction.args, instruction.number_of_executions)

@@ -573,6 +573,7 @@ class Test_Dialog(QDialog):
         self.project_path = self.main_window.project.path
         self.instructions = []
         self.test = test
+        self.thread_event = threading.Event()
 
         self.test_name.setText(self.test.name)
         self.test_name.setEnabled(False)
@@ -581,6 +582,7 @@ class Test_Dialog(QDialog):
         self.run_test_btn.clicked.connect(self.run_test)
         self.create_test_btn.clicked.connect(self.create_test)
         self.results_btn.clicked.connect(self.see_results)
+        self.cancel_btn.clicked.connect(self.thread_event.set)
 
         with open("./ui/Stylesheets/test_dialogs.qss", "r") as f:
             _styles = f.read()
@@ -624,9 +626,15 @@ class Test_Dialog(QDialog):
 
     def create_test(self):
         self.instructions = []
+        self.reset_progress_bar()
         
         try:
-            for i in range(self.scroll_widget_layout.count()):
+            inst_count = self.scroll_widget_layout.count()
+
+            if inst_count == 0:
+                return
+            
+            for i in range(inst_count):
                 self.instructions.append(self.scroll_widget_layout.itemAt(i).widget().get_instruction())
 
             print("All instructions ", self.instructions)
@@ -673,10 +681,16 @@ class Test_Dialog(QDialog):
     def show_error_progress_bar(self):
         self.progressBar.setStyleSheet("QProgressBar::chunk {background-color: red}")
         self.progressBar.setValue(100)
+
+    def reset_progress_bar(self):
+        self.progressBar.setStyleSheet("QProgressBar::chunk {background-color: lightgreen}")
+        self.progressBar.reset()
     
     def run_test(self):
+        self.run_test_btn.setEnabled(False)
+        self.thread_event.clear()
 
-        threading.Thread(target=self.test.run).start()
+        threading.Thread(target=self.test.run, args=(self.thread_event,)).start()
 
         self.thread = QThread()
 
@@ -1492,6 +1506,9 @@ class Manage_Accounts(QDialog):
 
     def accept(self) -> None:
         dlg = None
+
+        if self.test.accounts == []:
+            return
 
         if self.edit_bool:
             dlg = self.next_dlg(self.main_window, self.test)
