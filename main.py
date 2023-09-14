@@ -3,7 +3,8 @@ from PyQt6.QtWidgets import (QApplication, QWidget, QMainWindow, QHBoxLayout, QT
                             QMessageBox, QErrorMessage, QTextBrowser, QMenu)
 from menu_functions import *
 from dialogs.dialogs import (Compile_Dialog, Add_Account_Dialog, Add_Node_Dialog, Deploy_Dialog, IPFS_Token_Dialog, Functions_Layout, 
-                    Project_Widget, Left_Widget, Test_Dialog, Create_Project_Dialog, Manage_Test, Add_Files_IPFS, Select_Script, New_Account)
+                    Project_Widget, Left_Widget, Create_Project_Dialog, Add_Files_IPFS, Select_Script, New_Account)
+from dialogs.test_dialogs import Test_Dialog, Manage_Test
 from tests.visualizador import Visualizer, Select_Test_Visualizer
 from blockchain.account import Account, add_local_accounts
 from blockchain.network import Network, init_ganache
